@@ -1,0 +1,48 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Manager;
+use App\Models\Role;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\V1\User>
+ */
+class UserFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        $manager = Manager::select("*")->inRandomOrder()->findOrFail();
+        $role = Role::where('name', 'User')->findOrFail();
+        $password = bcrypt('Password@123');
+
+        return [
+            'email' => fake()->unique()->safeEmail(),
+            'password' => $password,
+            'first_name' => fake()->firstName(),
+            'other_name' => fake()->unique()->lastName(),
+            'phone_no' => fake()->unique()->phoneNumber(),
+            'dob' => fake()->date(),
+            'gender' => fake()->title(),
+            'profile_image' => fake()->unique()->imageUrl(),
+            'role_id' => $role->id,
+            'manager_id' => $manager->id,
+        ];
+    }
+
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
+    public function unverified(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+        ]);
+    }
+}

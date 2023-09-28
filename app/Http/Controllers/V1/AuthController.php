@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Http\Requests\LoginTokenRequest;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Controllers\Controller;
 use App\Interfaces\Services\IAuthService;
@@ -38,6 +39,14 @@ class AuthController extends Controller
     }
 
 
+    public function payload()
+    {
+        $response = $this->authService->payload();
+
+        return $response;
+    }
+
+
     public function refresh()
     {
         $response = $this->authService->refreshToken();
@@ -46,10 +55,9 @@ class AuthController extends Controller
     }
 
 
-
-    public function payload()
+    public function token(LoginTokenRequest $request)
     {
-        $response = $this->authService->payload();
+        $response = $this->authService->loginToken($request);
 
         return $response;
     }

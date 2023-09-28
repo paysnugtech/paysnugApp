@@ -27,6 +27,21 @@ use App\Interfaces\Repositories\ICountryRepository;
 use App\Implementations\Services\CountryService;
 use App\Interfaces\Services\ICountryService;
 
+use App\Implementations\Repositories\DeviceRepository;
+use App\Interfaces\Repositories\IDeviceRepository;
+// use App\Implementations\Services\DeviceService;
+// use App\Interfaces\Services\IDeviceService;
+
+use App\Implementations\Repositories\DeviceTokenRepository;
+use App\Interfaces\Repositories\IDeviceTokenRepository;
+use App\Implementations\Services\DeviceService;
+use App\Interfaces\Services\IDeviceService;
+
+use App\Implementations\Repositories\LogRepository;
+use App\Interfaces\Repositories\ILogRepository;
+// use App\Implementations\Services\LogService;
+// use App\Interfaces\Services\ILogService;
+
 use App\Implementations\Services\ManagerService;
 use App\Implementations\Repositories\ManagerRepository;
 use App\Interfaces\Repositories\IManagerRepository;
@@ -102,6 +117,15 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(ICountryRepository::class, CountryRepository::class);
         $this->app->bind(ICountryService::class, CountryService::class);
+
+        $this->app->bind(IDeviceRepository::class, DeviceRepository::class);
+        $this->app->bind(IDeviceService::class, DeviceService::class);
+
+        $this->app->bind(IDeviceTokenRepository::class, DeviceTokenRepository::class);
+        // $this->app->bind(IDeviceService::class, DeviceService::class);
+
+        $this->app->bind(ILogRepository::class, LogRepository::class);
+        // $this->app->bind(ILogService::class, LogService::class);
 
         $this->app->bind(IManagerRepository::class, ManagerRepository::class);
         $this->app->bind(IManagerService::class, ManagerService::class);

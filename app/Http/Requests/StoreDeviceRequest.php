@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rules\Enum;
 
-class LoginUserRequest extends FormRequest
+class StoreDeviceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,22 +28,22 @@ class LoginUserRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email', 'exists:users,email', 'max:255'],
-            'password' => ['required', 'string'],
             'token' => ['required', 'exists:device_verification_tokens,token'],
             'device_name' => ['required', 'string', 'min:3', 'max:255'],
-            'device_id' => ['required', 'string', 'min:3', 'max:255'],
+            'device_id' => ['required', 'string', 'min:3', 'max:255', 'unique:devices,device_id'],
             'device_type' => ['required', new Enum(DeviceTypeEnum::class)],
             'platform' => ['required', new Enum(DevicePlatformEnum::class)],
         ];
     }
 
 
-    public function failedValidation(Validator $validator): array
+    public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
             'status' => 'failed',
             'message' => 'Validation error!',
             'error' => $validator->errors(),
-        ]));
+        ],
+        422));
     }
 }

@@ -36,7 +36,7 @@ class StoreFingerPrintRequest extends FormRequest
     {
         
         return [
-            'finger_print' => ['required', 'string', 'digits:6'],
+            'finger_print' => ['required', 'string', 'max:255'],
         ];
     }
 

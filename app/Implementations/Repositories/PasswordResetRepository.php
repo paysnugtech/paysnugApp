@@ -33,6 +33,13 @@ class PasswordResetRepository implements IPasswordResetRepository{
         return PasswordReset::where('email', $data['email'])
             ->where('token', $data['token']);
     }
+
+    public function save($data)
+    {
+        $saved = $data->save();
+
+        return $saved;
+    }
     
     public function update($data)
     {

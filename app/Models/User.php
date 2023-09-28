@@ -4,6 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Models\Device;
+use App\Models\DeviceToken;
+use App\Models\Log;
 use App\Models\Service;
 use App\Models\Verification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -67,6 +70,24 @@ class User extends Authenticatable implements JWTSubject
     public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);
+    }
+
+
+    public function device(): HasOne
+    {
+        return $this->hasOne(Device::class);
+    }
+
+
+    /* public function deviceToken(): HasOne
+    {
+        return $this->hasOne(DeviceToken::class, 'device_token_id');
+    } */
+
+
+    public function log(): HasOne
+    {
+        return $this->hasOne(Log::class);
     }
 
 

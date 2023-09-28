@@ -2,14 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\DevicePlatformEnum;
-use App\Enums\DeviceTypeEnum;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Validation\Rules\Enum;
 
-class LoginUserRequest extends FormRequest
+class LoginTokenRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,12 +25,7 @@ class LoginUserRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email', 'exists:users,email', 'max:255'],
-            'password' => ['required', 'string'],
-            'token' => ['required', 'exists:device_verification_tokens,token'],
-            'device_name' => ['required', 'string', 'min:3', 'max:255'],
-            'device_id' => ['required', 'string', 'min:3', 'max:255'],
-            'device_type' => ['required', new Enum(DeviceTypeEnum::class)],
-            'platform' => ['required', new Enum(DevicePlatformEnum::class)],
+            'password' => ['required', 'string']
         ];
     }
 

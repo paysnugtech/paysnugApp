@@ -5,9 +5,9 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Country>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Device>
  */
-class CountryFactory extends Factory
+class DeviceFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -17,10 +17,7 @@ class CountryFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => '9a2b984c-a65d-4947-a978-f709a2e1d601',
-            'name' => 'Nigeria',
-            'currency' => 'Naira',
-            'currency_code' => 'NGN'
+            //
         ];
     }
 }

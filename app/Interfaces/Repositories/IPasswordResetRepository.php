@@ -10,6 +10,7 @@ interface IPasswordResetRepository{
     public function getByEmail($email);
     public function getByEmailAndToken($data);
     public function getAll();
+    public function save($data);
     public function update($data);
     public function delete($obj);
 

@@ -42,6 +42,8 @@ class Handler extends ExceptionHandler
             
             $code = $e->getCode() == 0 ? 500 : $e->getCode();
 
+            // print_r($e->getMessage());
+
             // print_r($code);
 
             if ($request->is('api/*')) {

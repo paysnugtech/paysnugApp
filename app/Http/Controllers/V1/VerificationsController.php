@@ -6,6 +6,7 @@ use App\Http\Requests\StoreBillRequest;
 use App\Http\Requests\StoreBvnRequest;
 use App\Http\Requests\StoreCardRequest;
 use App\Interfaces\Services\IVerificationService;
+use App\Models\User;
 use App\Models\Verification;
 use App\Http\Requests\StoreVerificationRequest;
 use App\Http\Requests\UpdateVerificationRequest;
@@ -26,31 +27,9 @@ class VerificationsController extends Controller
     /**
      * Verify user bvn.
      */
-    public function bill(StoreBillRequest $request, string $id)
+    public function bvn(StoreBvnRequest $request)
     {
-        $response = $this->verificationService->verifyBill($request, $id);
-
-        return $response;
-    }
-
-    
-    /**
-     * Verify user bvn.
-     */
-    public function bvn(StoreBvnRequest $request, string $id)
-    {
-        $response = $this->verificationService->verifyBvn($request, $id);
-
-        return $response;
-    }
-
-    
-    /**
-     * Verify user bvn.
-     */
-    public function card(StoreCardRequest $request, string $id)
-    {
-        $response = $this->verificationService->verifyCard($request, $id);
+        $response = $this->verificationService->verifyBvn($request);
 
         return $response;
     }

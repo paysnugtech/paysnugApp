@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('id')->primary();
             $table->string('token');
             $table->string('email');
+            $table->integer('expire_in')->default(3);
             $table->timestamps();
         });
     }

@@ -11,8 +11,9 @@ class WalletRepository implements IWalletRepository{
 
     public function create($data){
         // print_r($data);
-        $wallet = Wallet::create($data);
-        return $wallet;
+        $obj = Wallet::create($data);
+
+        return $obj;
     }
     
     public function get(string $id){
@@ -29,17 +30,24 @@ class WalletRepository implements IWalletRepository{
     {
         return Wallet::with(['accounts', 'country', 'type', 'user'])->where('user_id', $user_id);
     }
-    
-    public function update(Wallet $wallet, $data){
-        
-        $wallet->update($data);
 
-        return $wallet;
+    public function store(Wallet $obj)
+    {
+        $save = $obj->save();
+
+        return $save;
     }
     
-    public function delete(Wallet $wallet){
+    public function update(Wallet $obj, $data){
+        
+        $obj->update($data);
 
-        return $wallet->delete();
+        return $obj;
+    }
+    
+    public function delete(Wallet $obj){
+
+        return $obj->delete();
     }
     
 }

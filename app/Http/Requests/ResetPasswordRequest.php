@@ -2,12 +2,17 @@
 
 namespace App\Http\Requests;
 
+use App\Traits\ResponseTrait;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ResetPasswordRequest extends FormRequest
 {
+
+    use ResponseTrait;
+
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -24,25 +29,26 @@ class ResetPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email|exists:users,email|exists:password_reset_tokens,email',
-            'token' => 'required|digits:6',
-            'password' => 'required|string|min:8|max:15'
+            'email' => ['required', 'email', 'max:255', 'exists:users,email'],
+            'token' => ['required', 'digits:6', 'exists:tokens,number'],
+            'password' => ['required', 'string', 'min:8', 'max:15']
         ];
     }
 
     public function failedValidation(Validator $validator): array
     {
-        throw new HttpResponseException(response()->json([
-            'status' => "false",
-            'message' => 'Validation error!',
-            'error' => $validator->errors(),
-        ]));
+        throw new HttpResponseException($this->errorResponse(
+            422,
+            'Validation error!',
+            $validator->errors(),
+        ));
     }
 
     public function messages(): array
     {
         return [
             'email.exists' => 'Email does not exist',
+            'token.exists' => 'Invalid token',
         ];
     }
 }

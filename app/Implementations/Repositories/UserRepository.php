@@ -11,14 +11,15 @@ class UserRepository implements IUserRepository{
 
     public function create($data){
 
-        $user = User::create($data);
-        return $user;
+        $obj = User::create($data);
+        return $obj;
     }
     
     public function get(string $id){
 
-        return User::with([
+        $user = User::with([
             'device', 
+            'level', 
             'log', 
             'role', 
             'profile' =>[
@@ -26,7 +27,7 @@ class UserRepository implements IUserRepository{
             ], 
             'manager', 
             'notification', 
-            'service', 
+            'services', 
             'verification' => [
                 'bill',
                 'bvn',
@@ -37,12 +38,15 @@ class UserRepository implements IUserRepository{
             ], 
             'wallets.accounts.bank.country'
         ])->where('id', $id);
+
+        return $user;
     }
     
     public function getAll(){
 
         return User::with([
             'device', 
+            'level',
             'log', 
             'role', 
             'profile' =>[
@@ -50,7 +54,7 @@ class UserRepository implements IUserRepository{
             ], 
             'manager', 
             'notification', 
-            'service', 
+            'services', 
             'verification' => [
                 'bill',
                 'bvn',
@@ -60,13 +64,14 @@ class UserRepository implements IUserRepository{
                 'type'
             ], 
             'wallets.accounts.bank.country'
-        ])->get();
+        ])->orderBy('created_at', 'DESC')->get();
     }
 
     public function getByEmail($email)
     {
         return User::with([
             'device', 
+            'level',
             'log', 
             'role', 
             'profile' =>[
@@ -74,7 +79,7 @@ class UserRepository implements IUserRepository{
             ], 
             'manager', 
             'notification', 
-            'service', 
+            'services', 
             'verification' => [
                 'bill',
                 'bvn',
@@ -86,17 +91,27 @@ class UserRepository implements IUserRepository{
             'wallets.accounts.bank.country'
         ])->where('email', $email);
     }
-    
-    public function update(User $user, $data){
-        
-        $user->update($data);
 
-        return $user;
+    public function store(User $obj)
+    {
+
+        $save = $obj->save();
+
+        return $save;
     }
     
-    public function delete(User $user){
+    public function update(User $obj, $data){
+        
+        $update = $obj->update($data);
 
-        return $user->delete();
+        return $update;
+    }
+    
+    public function delete(User $obj){
+
+        $delete = $obj->delete();
+
+        return $delete;
     }
     
 }

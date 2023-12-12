@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CardTypeStatusEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,13 +21,15 @@ class CardType extends Model
     protected $table = 'card_types';
 
     protected $casts = [
-
+        'status'=> CardTypeStatusEnum::class,
     ];
 
     protected $fillable = [
         'id',
         'name',
         'description',
+        'doc_type',
+        'doc_no',
         'status',
         "created_by",
         "updated_by",

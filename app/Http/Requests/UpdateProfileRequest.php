@@ -7,22 +7,11 @@ use App\Interfaces\Repositories\IProfileRepository;
 use App\Interfaces\Repositories\IUserRepository;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Enum;
 
 class UpdateProfileRequest extends FormRequest
 {
-    
-    protected $profileRepository;
-    protected $userRepository;
-    protected $user_id;
-
-    
-    public function __construct(IProfileRepository $profileRepository, IUserRepository $userRepository, Request $request)
-    {
-        $this->profileRepository = $profileRepository;
-        $this->userRepository = $userRepository;
-        $this->user_id = $request->route('id');
-    }
 
 
     /**
@@ -30,7 +19,7 @@ class UpdateProfileRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $model = $this->profileRepository->getByUserId($this->user_id)->first();
+        $model = Auth::user()->profile;
 
         return $this->user()->can('update', $model);
     }
@@ -44,7 +33,7 @@ class UpdateProfileRequest extends FormRequest
     {
         $dt = now()->subYears(18)->toDateString();
 
-        $id = $this->profileRepository->getByUserId($this->user_id)->first()->id;
+        $id = Auth::user()->profile->id;
         
         return [
             'first_name' => 'required|string|max:25',

@@ -23,17 +23,24 @@ class AddressRepository implements IAddressRepository{
 
         return Address::with(['country'])->all();
     }
-    
-    public function update(Address $address, $data){
-        
-        $address->update($data);
 
-        return $address;
+    public function store(Address $address){
+
+        $obj = $address->save();
+
+        return $obj;
     }
     
-    public function delete(Address $address){
+    public function update(Address $obj, $data){
+        
+        $obj->update($data);
 
-        return $address->delete();
+        return $obj;
+    }
+    
+    public function delete(Address $obj){
+
+        return $obj->delete();
     }
     
 }

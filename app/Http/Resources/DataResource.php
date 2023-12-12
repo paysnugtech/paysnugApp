@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class DataResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'transaction_no' => $this->number,
+            'amount' => $this->amount,
+            'commission' => $this->commission,
+            'discount' => $this->discount,
+            'profit' => $this->profit,
+            'type' => $this->type->name,
+            'service_type' => $this->service_type->name,
+            'balance_before' => $this->balance_before,
+            'balance_after' => number_format($this->balance_after, 2, '.', ''),
+            'reference_no' => $this->reference_no,
+            'narration' => $this->narration,
+            'status' => $this->status->name,
+            'remark' => $this->remark,
+            'data' => $this->data,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at
+        ];
+    }
+}

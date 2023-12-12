@@ -26,6 +26,7 @@ class Bvn extends Model
         'id',
         'number',
         'is_verified',
+        'remark',
         "user_id",
         "verification_id",
         "updated_by"
@@ -33,6 +34,8 @@ class Bvn extends Model
 
     protected $hidden = [
         'id',
+        "number",
+        "remark",
         "user_id",
         "verification_id",
         "updated_by",

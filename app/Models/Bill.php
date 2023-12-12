@@ -24,7 +24,9 @@ class Bill extends Model
     protected $fillable = [
         'id',
         'number',
+        'url',
         'is_verified',
+        'remark',
         "user_id",
         "verification_id",
         "updated_by"
@@ -32,6 +34,9 @@ class Bill extends Model
 
     protected $hidden = [
         'id',
+        "number",
+        "url",
+        "remark",
         "user_id",
         "verification_id",
         "updated_by",

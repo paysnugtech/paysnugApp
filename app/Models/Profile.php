@@ -31,7 +31,7 @@ class Profile extends Model
         'phone_no',
         'gender',
         'dob',
-        'image',
+        'picture_url',
         'user_id'
     ];
 
@@ -52,6 +52,12 @@ class Profile extends Model
     public function address(): HasOne
     {
         return $this->hasOne(Address::class);
+    }
+
+
+    public function fullName()
+    {
+        return $this->first_name ." ". $this->other_name;
     }
 
 

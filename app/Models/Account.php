@@ -20,7 +20,8 @@ class Account extends Model
 
     protected $fillable = [
         'number',
-        'bank_id',
+        'provider_name',
+        'type',
         'user_id',
         'wallet_id',
         'is_active',

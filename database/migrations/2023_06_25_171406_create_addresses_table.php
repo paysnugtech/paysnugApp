@@ -17,12 +17,12 @@ return new class extends Migration
             $table->string('country');
             $table->string('street');
             $table->string('city');
-            $table->string('postal_code');
+            $table->string('postal_code')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
             
-            $table->foreign('profile_id')->references('id')->on('profiles')->onDelete('cascade');
+            $table->foreign('profile_id')->references('id')->on('profiles')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 

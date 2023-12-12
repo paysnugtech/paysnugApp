@@ -13,6 +13,7 @@ interface INotificationRepository{
     public function get(string $id);
     public function getAll();
     public function getByUserId(string $user_id);
+    public function store(Notification $notification);
     public function update(Notification $notification, $data);
     public function delete(Notification $notification);
 

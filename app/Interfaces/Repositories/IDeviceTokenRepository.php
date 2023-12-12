@@ -16,7 +16,7 @@ interface IDeviceTokenRepository{
     public function get(string $id);
     public function getAll();
     public function getByEmail($email);
-    public function save(DeviceToken $deviceToken);
+    public function store(DeviceToken $deviceToken);
     public function update(DeviceToken $token, $data);
     public function delete(DeviceToken $token);
 

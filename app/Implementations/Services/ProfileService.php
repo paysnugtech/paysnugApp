@@ -6,18 +6,15 @@ namespace App\Implementations\Services;
 use App\Http\Resources\UsersResource;
 use App\Interfaces\Repositories\IAddressRepository;
 use App\Interfaces\Repositories\ICountryRepository;
-use App\Interfaces\Repositories\INotificationRepository;
 use App\Interfaces\Repositories\IProfileRepository;
 use App\Interfaces\Repositories\IUserRepository;
 use App\Interfaces\Services\IProfileService;
 use App\Interfaces\Services\IUserService;
 use App\Policies\ProfilePolicy;
+use App\Traits\ResponseTrait;
+use App\Traits\StatusTrait;
+use App\Traits\WhereHouseTrait;
 use Illuminate\Http\Request;
-use App\Models\Address;
-use App\Traits\CreateAddress;
-use App\Traits\ErrorResponse;
-use App\Traits\SuccessResponse;
-use App\Traits\TokenResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -27,9 +24,9 @@ use App\Policies\UserPolicy;
 
 class ProfileService implements IProfileService
 {
-    use ErrorResponse,
-        SuccessResponse, 
-        TokenResponse;
+    use ResponseTrait,
+        StatusTrait,
+        WhereHouseTrait;
 
 
     protected $addressRepository;
@@ -69,10 +66,73 @@ class ProfileService implements IProfileService
 
         DB::commit();
 
-        return $this->tokenResponse(
-            new UsersResource($newProfile),
-            $newProfile,
-            'Created Successful'
+        return $this->successResponse(
+            message: 'Created Successful'
+        );
+    }
+    
+
+    public function storeProfilePicture($request){
+
+        $validated = $request->validated();
+
+        // Save User
+        $profile = $request->user()->profile;
+
+        $picture = $request->file('picture');
+
+        if(!$picture->isValid())
+        {
+            return $this->errorResponse(
+                422, 
+                'Picture not valid'
+            );
+        }
+
+
+        $requestData = [
+            'data' => json_encode([
+                'kyc_type' => 'selfie',
+                'name' => $profile->user->id,
+                'file' => base64_encode(file_get_contents($picture))
+            ]),
+            'header' => [
+                'X-Secret-Key: '. env('PSG_SECRET_KEY'),
+                'Accept: application/json',
+                'Content-Type: application/json',
+            ],
+            'url' => env('UPLOAD_PICTURE_ENDPOINT')
+        ];
+
+
+        $uploadPicture = $this->curlPostApi($requestData);
+
+        if(!$uploadPicture->success)
+        {
+            return $this->errorResponse( 
+                message: $uploadPicture->message
+            );
+        }
+
+        
+        DB::beginTransaction();
+
+            $profile->picture_url = $uploadPicture->data->url;
+
+            $store = $this->profileRepository->store($profile);
+
+            if(!$store)
+            {
+                return $this->ErrorResponse(
+                    message: 'Unable to upload profile picture'
+                );
+            }
+
+
+        DB::commit();
+
+        return $this->successResponse(
+            message: 'Picture uploaded successful'
         );
     }
     

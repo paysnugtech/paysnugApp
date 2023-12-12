@@ -25,7 +25,8 @@ class Log extends Model
         'login_at',
         'logout_at',
         'status',
-        'user_id'
+        'user_id',
+        'deleted_at'
     ];
     
     protected $hidden = [

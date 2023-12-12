@@ -22,20 +22,24 @@ trait StoreLog{
     protected function StoreLog($user, $request)
     { 
 
+        $getLog = $this->logRepository->getByUserId($user->id)->first();
+
+        if($getLog)
+        {
+            $timeNow = now();
+            $getLog->logout_at = $timeNow;
+            $getLog->deleted_at = $timeNow;
+
+            $this->logRepository->store($getLog);
+        }
+
         $log = new Log;
         $log->ip = $request->ip();
         $log->login_at = now();
         $log->status = LogStatusEnum::Login->value;
         $log->user_id = $user->id;
 
-        $getLog = $this->logRepository->getByUserId($user->id)->first();
-
-        if($getLog)
-        {
-            $this->logRepository->delete($getLog);
-        }
-
-        $store = $this->logRepository->save($log);
+        $store = $this->logRepository->store($log);
 
         return $store; 
     }

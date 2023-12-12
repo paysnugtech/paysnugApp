@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->integer('level')->default(1);
             $table->string('finger_print')->nullable();
             $table->string('pin')->nullable();
             $table->string('role_id');

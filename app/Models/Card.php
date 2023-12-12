@@ -24,7 +24,10 @@ class Card extends Model
     protected $fillable = [
         'id',
         'number',
+        'front_url',
+        'back_url',
         'is_verified',
+        'remark',
         "user_id",
         "verification_id",
         "updated_by"
@@ -32,6 +35,10 @@ class Card extends Model
 
     protected $hidden = [
         'id',
+        "number",
+        "front_url",
+        "back_url",
+        "remark",
         "user_id",
         "verification_id",
         "updated_by",

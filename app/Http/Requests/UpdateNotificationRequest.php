@@ -7,25 +7,18 @@ use App\Enums\PushNotificationEnum;
 use App\Enums\SmsNotificationEnum;
 use App\Interfaces\Repositories\IUserRepository;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Enum;
 
 class UpdateNotificationRequest extends FormRequest
 {
-    protected $userRepository;
-
-    public function __construct(IUserRepository $userRepository)
-    {
-        $this->userRepository = $userRepository;
-    }
-
-
 
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        $user =  $this->userRepository->get($this->user)->first();
+        $user =  Auth::user();
 
         return $this->user()->can('update', $user);
     }

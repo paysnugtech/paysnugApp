@@ -11,8 +11,8 @@ class DeviceRepository implements IDeviceRepository{
 
     public function create($data){
 
-        $device = Device::create($data);
-        return $device;
+        $obj = Device::create($data);
+        return $obj;
     }
     
     public function get(string $id){
@@ -31,12 +31,15 @@ class DeviceRepository implements IDeviceRepository{
 
     public function getByUserId($user_id)
     {
-        return Device::with([
+        
+        $obj = Device::with([
             'user'
         ])->where('user_id', $user_id);
+
+        return $obj;
     }
 
-    public function save(Device $device)
+    public function store(Device $device)
     {
 
         $obj = $device->save();
@@ -44,16 +47,16 @@ class DeviceRepository implements IDeviceRepository{
         return $obj;
     }
     
-    public function update(Device $device, $data){
+    public function update(Device $obj, $data){
         
-        $device->update($data);
+        $obj->update($data);
 
-        return $device;
+        return $obj;
     }
     
-    public function delete(Device $device){
+    public function delete(Device $obj){
 
-        return $device->delete();
+        return $obj->delete();
     }
     
 }

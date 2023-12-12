@@ -27,6 +27,7 @@ class Device extends Model
         'device_id',
         'device_type',
         'platform',
+        'signature',
         'ip',
         'status',
         'user_id'
@@ -34,6 +35,8 @@ class Device extends Model
     
     protected $hidden = [
         'id',
+        'signature',
+        'user_id',
         'deleted_at',
         'created_at',
         'updated_at',

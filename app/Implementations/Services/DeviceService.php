@@ -4,8 +4,7 @@
 namespace App\Implementations\Services;
 
 use App\Enums\DeviceStatusEnum;
-use App\Http\Resources\NotificationsResource;
-use App\Http\Resources\ProfilesResource;
+use App\Http\Resources\DevicesResource;
 use App\Http\Resources\UsersResource;
 use App\Interfaces\Repositories\IDeviceRepository;
 use App\Interfaces\Repositories\IDeviceTokenRepository;
@@ -13,11 +12,13 @@ use App\Interfaces\Repositories\IUserRepository;
 use App\Interfaces\Repositories\IVerificationRepository;
 use App\Interfaces\Services\IDeviceService;
 use App\Models\Device;
+use App\Traits\SendEmail;
 use App\Traits\StoreVerification;
 use Illuminate\Http\Request;
-use App\Traits\ErrorResponse;
-use App\Traits\SuccessResponse;
-use App\Traits\TokenResponse;
+use App\Traits\EmailTrait;
+use App\Traits\ResponseTrait;
+use App\Traits\StatusTrait;
+use App\Traits\TokenTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -27,10 +28,11 @@ use Illuminate\Support\Carbon;
 
 class DeviceService implements IDeviceService
 {
-    use ErrorResponse,
+    use EmailTrait,
+        ResponseTrait,
+        StatusTrait,
         StoreVerification,
-        SuccessResponse, 
-        TokenResponse;
+        TokenTrait;
 
     protected $deviceRepository;
     protected $deviceTokenRepository;
@@ -112,63 +114,80 @@ class DeviceService implements IDeviceService
         $validated = $request->validated();
 
         
-        $deviceToken = $this->deviceTokenRepository->getByEmail($validated['email'])->firstOrFail();
+        $deviceToken = $this->deviceTokenRepository->getByEmail($validated['email'])->first();
 
-        if($deviceToken->token != $validated['token'])
+
+        if(!$deviceToken)
         {
             return $this->errorResponse(
-                [], 
-                'Invalid Token'
+                $this->statusCode('not_found'),
+                message: 'Token not found'
             );
         }
 
 
-        // Expire in 5 minutes
-        if(now()->subMinutes(5) > $deviceToken->created_at )
+        if(!$this->verifyToken($validated['token'], $deviceToken))
         {
             return $this->errorResponse(
-                [], 
-                'Token already expired'
+                message: 'Invalid Token'
             );
+        }
+
+
+
+
+        if($this->tokenExpire($deviceToken))
+        {
+
+            return $this->errorResponse(
+                $this->statusCode('token_expired'),
+                message: 'Token already expired'
+            );
+            
         }
 
 
         // get User
         $user = $this->userRepository->getByEmail($validated['email'])->firstOrFail();
 
-    
 
         DB::beginTransaction();
 
-        // Store verification
+        // create device instance
         $device = new Device;
-        $device->device_name = $validated['device_name'];
+        $device->name = $validated['device_name'];
         $device->device_id = $validated['device_id'];
-        $device->device_type = $validated['device_type'];
+        $device->type = $validated['device_type'];
         $device->platform = $validated['platform'];
-        $device->ip = $request->ip;
+        $device->signature = Str::random(64);
+        $device->ip = $request->ip();
         $device->status = DeviceStatusEnum::Verify->value;
         $device->user_id = $user->id;
 
-        $this->deviceRepository->save($device);
-        
-        
-        DB::commit();
 
         // send notification
+        $sendEmail = $this->deviceVerificationSuccessEmail($user);
+
+        if(!$sendEmail->success )
+        {
+            return $this->errorResponse(
+                message: 'Email Error!'
+            );
+        }
+
+
+        // Store device
+        $this->deviceRepository->store($device);
         
+        $this->deviceTokenRepository->delete($deviceToken);
 
-        // get created user
-        /* $user = $this->userRepository->get($newUser->id)->firstOrFail();
-
-        $token = Auth::login($user);
+        DB::commit();
 
 
-        return $this->tokenResponse(
-            new UsersResource($user),
-            $token,
-            'Created Successful'
-        ); */
+        return $this->successResponse(
+            new DevicesResource($device),
+            'Verify Successful'
+        );
     }
     
     

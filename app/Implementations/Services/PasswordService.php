@@ -3,28 +3,42 @@
 
 namespace App\Implementations\Services;
 
-use App\Http\Resources\ManagersResource;
-use App\Http\Resources\UsersResource;
+use App\Enums\TokenTypeEnum;
 use App\Interfaces\Repositories\IPasswordResetRepository;
+use App\Interfaces\Repositories\ITokenRepository;
 use App\Interfaces\Repositories\IUserRepository;
 use App\Interfaces\Services\IPasswordService;
 use App\Models\User;
-use App\Traits\ErrorResponse;
-use App\Traits\SuccessResponse;
+use App\Traits\EmailTrait;
+use App\Traits\ResponseTrait;
+use App\Traits\StatusTrait;
+use App\Traits\TokenTrait;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 
 class PasswordService implements IPasswordService
 {
-    use ErrorResponse, SuccessResponse;
+    use EmailTrait, 
+        ResponseTrait,
+        StatusTrait,
+        TokenTrait;
 
 
+    protected $expires_in;
     protected $passwordResetRepository;
+    protected $tokenRepository;
     protected $userRepository;
 
-    public function __construct(IPasswordResetRepository $passwordResetRepository, IUserRepository $userRepository){
+    public function __construct(
+        IPasswordResetRepository $passwordResetRepository, 
+        ITokenRepository $tokenRepository, 
+        IUserRepository $userRepository){
 
+        $this->expires_in = env('TOKEN_EXPIRES');
         $this->passwordResetRepository = $passwordResetRepository;
+        $this->tokenRepository = $tokenRepository;
         $this->userRepository = $userRepository;
     }
     
@@ -106,35 +120,109 @@ class PasswordService implements IPasswordService
 
     }
     
-    public function resetPassword($validateData)
-    {
 
-        $data = ['password' => bcrypt($validateData['password'])];
 
-        $user = $this->userRepository->getByEmail($validateData['email'])->firstOrFail();
-
-        $updated = $this->userRepository->update($user, $data);
-
-        // Delete Token
-        $obj = $this->passwordResetRepository->getByEmailAndToken($validateData);
-
-        $this->passwordResetRepository->delete($obj);
-
-        return $this->successResponse([], 'Reset Successful');
-    }
-    
-    public function updatePassword($request, string $id)
+    public function changePassword($user, $request)
     {
         $validated = $request->validated();
-
-        $user_id = Auth::id();
-
-        $user = $this->userRepository->get($user_id)->firstOrFail();
         
         $user->password = bcrypt($validated['password']);
         
-        $user->save();
+        DB::beginTransaction();
+        
+            $update = $this->userRepository->store($user);
 
-        return $this->successResponse([], 'Password Changed Successful');
+            if(!$update)
+            {
+                return $this->errorResponse(
+                    message: 'Unable to Change password!'
+                );
+            }
+
+        DB::commit();
+
+
+        // Sent the registration token to email/phone
+        $sendEmail = $this->sendChangePasswordSuccessEmail($user);
+
+
+        if(!$sendEmail->success)
+        {
+            /* return $this->errorResponse(
+                message: $sendEmail->message
+            ); */
+        }
+
+        return $this->successResponse(
+            message: 'Password Changed Successful'
+        );
     } 
+    
+    public function resetPassword($request)
+    {
+        
+        $validated = $request->validated();
+        $email = $validated['email'];
+        $token = $validated['token'];
+        $type = TokenTypeEnum::ResetPassword->value;
+
+        $tokenObj = $this->tokenRepository->fetchByEmailNumberType($email, $token, $type)->first();
+
+        if(!$tokenObj)
+        {
+            return $this->errorResponse(
+                422, 
+                'Not found error'
+            );
+        }
+        
+
+        if($this->TokenExpire($tokenObj))
+        {
+            return $this->errorResponse(
+                $this->StatusCode('token_expired'),
+                'Token validation error',
+                [
+                    'token' => 'Token Expired',
+                ], 
+            );
+        }
+
+        
+
+        $user = $this->userRepository->getByEmail($validated['email'])->firstOrFail();
+        $user->password = bcrypt($validated['password']);
+
+        DB::beginTransaction();
+
+            $updated = $this->userRepository->store($user);
+
+            if(!$updated)
+            {
+                return $this->errorResponse(
+                    message: 'Unable to update password',
+                );
+            }
+
+            $this->tokenRepository->delete($tokenObj);
+
+        DB::commit();
+
+
+
+        // Sent the registration token to email/phone
+        $sendEmail = $this->sendResetPasswordSuccessEmail($user);
+
+
+        if(!$sendEmail->success)
+        {
+            /* return $this->errorResponse(
+                message: $sendEmail->message
+            ); */
+        }
+
+        return $this->successResponse(
+            message: 'Reset Successful'
+        );
+    }
 }

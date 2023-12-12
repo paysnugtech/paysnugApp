@@ -14,7 +14,7 @@ interface ILogRepository{
     public function get(string $id);
     public function getAll();
     public function getByUserId($user_id);
-    public function save(Log $log);
+    public function store(Log $log);
     public function update(Log $log, $data);
 
 }

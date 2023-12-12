@@ -17,7 +17,7 @@ class ServiceFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => 'Transfer', 'discount' => '0',  'charges' => '10','fee' => '5', 'duplicate_time' => '3',
         ];
     }
 }

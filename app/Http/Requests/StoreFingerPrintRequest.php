@@ -3,26 +3,23 @@
 namespace App\Http\Requests;
 
 use App\Interfaces\Repositories\IUserRepository;
+use App\Traits\ResponseTrait;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Auth;
 
 class StoreFingerPrintRequest extends FormRequest
 {
-    protected $userRepository;
 
-    public function __construct(IUserRepository $userRepository)
-    {
-        $this->userRepository = $userRepository;
-    }
-
+    use ResponseTrait;
 
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        $user = $this->userRepository->get($this->user)->first();
+        $user = Auth::user();
 
         return $this->user()->can('update', $user);
     }
@@ -43,12 +40,11 @@ class StoreFingerPrintRequest extends FormRequest
 
     public function failedValidation(Validator $validator)
     {
-        throw new HttpResponseException(response()->json([
-            'status' => 'failed',
-            'message' => 'Validation error!',
-            'error' => $validator->errors(),
-        ],
-        422));
+        throw new HttpResponseException($this->errorResponse(
+            422,
+            'Validation error!',
+            $validator->errors(),
+        ));
     }
 
 

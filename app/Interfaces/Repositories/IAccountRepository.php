@@ -17,6 +17,7 @@ interface IAccountRepository{
     public function getByBankId($bank_id);
     public function getByUserId($user_id);
     public function getByWalletId($wallet_id);
+    public function store(Account $account);
     public function update(Account $account, $data);
     public function delete(Account $account);
 

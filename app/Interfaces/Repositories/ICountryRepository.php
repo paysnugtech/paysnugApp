@@ -14,6 +14,7 @@ interface ICountryRepository{
     public function getByName(string $name);
     public function getByStatus($status);
     public function getAll();
+    public function store(Country $country);
     public function update(Country $country, $data);
     public function delete(Country $country);
 

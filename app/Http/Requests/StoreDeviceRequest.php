@@ -28,9 +28,9 @@ class StoreDeviceRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email', 'exists:users,email', 'max:255'],
-            'token' => ['required', 'exists:device_verification_tokens,token'],
+            'token' => ['required', 'string', 'max:255'],
             'device_name' => ['required', 'string', 'min:3', 'max:255'],
-            'device_id' => ['required', 'string', 'min:3', 'max:255', 'unique:devices,device_id'],
+            'device_id' => ['required', 'string', 'min:3', 'max:255'],
             'device_type' => ['required', new Enum(DeviceTypeEnum::class)],
             'platform' => ['required', new Enum(DevicePlatformEnum::class)],
         ];

@@ -13,6 +13,7 @@ interface IUserRepository{
     public function get(string $id);
     public function getAll();
     public function getByEmail($email);
+    public function store(User $user);
     public function update(User $user, $data);
     public function delete(User $user);
 

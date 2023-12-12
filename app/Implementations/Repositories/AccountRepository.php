@@ -55,16 +55,23 @@ class AccountRepository implements IAccountRepository{
         return Account::with(['bank', 'user', 'wallet'])->where('wallet_id', $wallet_id);
     }
     
-    public function update(Account $account, $data){
+    public function store(Account $account){
         
-        $account->update($data);
+        $obj = $account->save();
 
-        return $account;
+        return $obj;
     }
     
-    public function delete(Account $account){
+    public function update(Account $obj, $data){
+        
+        $obj->update($data);
 
-        return $account->delete();
+        return $obj;
+    }
+    
+    public function delete(Account $obj){
+
+        return $obj->delete();
     }
     
 }

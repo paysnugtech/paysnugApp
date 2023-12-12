@@ -17,7 +17,7 @@ trait StoreVerification{
 
     
     
-    protected function StoreVerification($user)
+    protected function storeVerification($user)
     { 
 
         // Save Notification

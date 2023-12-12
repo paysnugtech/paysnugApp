@@ -13,6 +13,7 @@ interface IWalletTypeRepository{
     public function get(string $id);
     public function getAll();
     public function getByName($name);
+    public function store(WalletType $wallet);
     public function update(WalletType $wallet, $data);
     public function delete(WalletType $wallet);
 

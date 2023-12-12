@@ -14,6 +14,7 @@ interface IProfileRepository{
     public function getAll();
     public function getByPhoneNo($phone_no);
     public function getByUserId($user_id);
+    public function store(Profile $profile);
     public function update(Profile $profile, $data);
     public function delete(Profile $profile);
 

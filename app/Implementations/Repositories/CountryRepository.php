@@ -9,18 +9,21 @@ use App\Models\Country;
 class CountryRepository implements ICountryRepository{
 
 
-    public function create($data){
-
+    public function create($data)
+    {
         return Country::create($data);
     }
     
-    public function get(string $id){
+    public function get(string $id)
+    {
 
-        return Country::where('id', $id);
+        $obj = Country::where('id', $id);
+
+        return $obj;
     }
     
-    public function getAll(){
-
+    public function getAll()
+    {
         return Country::all();
     }
 
@@ -34,16 +37,23 @@ class CountryRepository implements ICountryRepository{
         return Country::where('is_available', $status);
     }
     
-    public function update(Country $country, $data){
-        
-        $country->update($data);
+    public function store(Country $country)
+    {
+        $obj = $country->save();
 
-        return $country;
+        return $obj;
     }
     
-    public function delete(Country $country){
+    public function update(Country $obj, $data)
+    {
+        $obj->update($data);
 
-        return $country->delete();
+        return $obj;
+    }
+    
+    public function delete(Country $obj)
+    {
+        return $obj->delete();
     }
     
 }

@@ -16,32 +16,46 @@ class ProfileRepository implements IProfileRepository{
         return $profile;
     }
     
+
     public function get(string $id){
 
         return Profile::with(['address'])->where('id', $id);
     }
     
+
     public function getAll(){
 
         return Profile::with(['address'])->get();
     }
+
 
     public function getByPhoneNo($phone_no)
     {
         return Profile::with(['address'])->where('phone_no', $phone_no);
     }
 
+
     public function getByUserId($user_id)
     {
         return Profile::with(['address'])->where('user_id', $user_id);
     }
+
+
+    public function store(Profile $profile)
+    {
+        $obj = $profile->save();
+
+        return $obj;
+    }
     
+
     public function update(Profile $profile, $data){
         
         $profile->update($data);
 
         return $profile;
     }
+    
     
     public function delete(Profile $profile){
 

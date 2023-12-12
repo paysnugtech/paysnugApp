@@ -13,9 +13,9 @@ class DeviceTokenRepository implements IDeviceTokenRepository{
     public function create($data)
     {
         // $create = DB::table('device_verification_tokens')->insert($data);
-        $create = DeviceToken::create($data);
+        $obj = DeviceToken::create($data);
 
-        return $create;
+        return $obj;
     }
     
     public function get(string $id){
@@ -33,24 +33,24 @@ class DeviceTokenRepository implements IDeviceTokenRepository{
         return DeviceToken::with([])->where('email', $email);
     }
 
-    public function save(DeviceToken $deviceToken)
+    public function store(DeviceToken $obj)
     {
 
-        $saved = $deviceToken->save();
+        $save = $obj->save();
 
-        return $saved;
+        return $save;
     }
 
-    public function update(DeviceToken $token, $data){
+    public function update(DeviceToken $obj, $data){
         
-        $token->update($data);
+        $update = $obj->update($data);
 
-        return $token;
+        return $update;
     }
     
-    public function delete(DeviceToken $token){
+    public function delete(DeviceToken $obj){
 
-        return $token->delete();
+        return $obj->delete();
     }
     
 }

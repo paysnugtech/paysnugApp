@@ -18,6 +18,7 @@ class DeviceToken extends Model
         'id',
         'token',
         'email',
+        'expire_in',
         'created_at',
     ];
 }

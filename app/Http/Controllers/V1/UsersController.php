@@ -5,16 +5,17 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePinRequest;
+use App\Http\Requests\ResetPinRequest;
 use App\Http\Requests\StoreFingerPrintRequest;
 use App\Http\Requests\StorePinRequest;
+use App\Http\Requests\StoreProfilePictureRequest;
 use App\Http\Requests\UpdateNotificationRequest;
 use App\Http\Requests\UpdateProfileRequest;
-use App\Http\Requests\UpdateUserProfileRequest;
 use App\Interfaces\Services\IUserService;
 use App\Models\User;
-use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
 {
@@ -29,7 +30,6 @@ class UsersController extends Controller
 
 
 
-
     /**
      * Display a listing of the resource.
      */
@@ -40,48 +40,71 @@ class UsersController extends Controller
         return $response;
     }
 
-    public function fingerPrint(StoreFingerPrintRequest $request, string $id){
-        
-        $response = $this->userService->storeFingerPrint($request, $id);
-        
-        return $response;
 
-    }
-
-    public function notification(UpdateNotificationRequest $request, string $id)
+    public function notification(UpdateNotificationRequest $request)
     {
-        $response = $this->userService->updateNotification($request, $id);
+        $user = Auth::user();
+
+        $response = $this->userService->updateNotification($request, $user);
         
         return $response;
     }
 
-    public function pin(StorePinRequest $request, string $id){
-        
-        $response = $this->userService->setPin($request, $id);
-        
-        return $response;
 
-    }
-
-    public function profile(UpdateProfileRequest $request, string $id){
-
-        $response = $this->userService->updateProfile($request, $id);
-        
-        return $response;
-
-    }
-
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreUserRequest $request)
+    public function changePin(ChangePinRequest $request)
     {
         
-        $response = $this->userService->storeUser($request);
+        $user  = Auth::user();
+
+        $response = $this->userService->changePin($request, $user);
         
         return $response;
     }
+
+
+    public function pin(StorePinRequest $request){
+        
+        $user  = Auth::user();
+
+        $response = $this->userService->setPin($request, $user);
+        
+        return $response;
+
+    }
+
+
+    public function storeFingerPrint(StoreFingerPrintRequest $request){
+
+        $user  = Auth::user();
+        
+        $response = $this->userService->storeFingerPrint($request, $user);
+        
+        return $response;
+
+    }
+
+
+    public function resetPin(ResetPinRequest $request){
+        
+        $user  = Auth::user();
+
+        $response = $this->userService->resetPin($request, $user);
+        
+        return $response;
+
+    }
+
+
+    public function profile(UpdateProfileRequest $request){
+
+        $user = Auth::user();
+
+        $response = $this->userService->updateProfile($request, $user);
+        
+        return $response;
+
+    }
+
 
     /**
      * Display the specified resource.
@@ -97,22 +120,38 @@ class UsersController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, string $id)
+    public function update(UpdateUserRequest $request)
     {
-        
-        $response = $this->userService->updateUser($request, $id);
+        $user = Auth::user();
+
+        $response = $this->userService->updateUser($request, $user);
         
         return $response;
     }
 
+
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy()
     {
+        $user = Auth::user();
 
-        $response = $this->userService->deleteUser($id);
+        $response = $this->userService->deleteUser($user);
         
+        return $response;
+    }
+
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function wallets()
+    {
+        $user = Auth::user();
+
+        $response = $this->userService->getWallet($user);
+
         return $response;
     }
 }

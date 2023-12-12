@@ -2,20 +2,21 @@
 
 namespace App\Http\Requests;
 
-use App\Interfaces\Repositories\IVerificationRepository;
+use App\Interfaces\Repositories\ICardTypeRepository;
+use App\Models\CardType;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreCardRequest extends FormRequest
 {
-    protected $verificationRepository;
+    protected $cardTypeRepository;
 
     public function __construct(
-        IVerificationRepository $verificationRepository
+        ICardTypeRepository $cardTypeRepository
     )
     {
-        $this->verificationRepository = $verificationRepository;
+        $this->cardTypeRepository = $cardTypeRepository;
     }
 
 
@@ -24,9 +25,9 @@ class StoreCardRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $model = $this->verificationRepository->getByUserId($this->user)->first();
+        // $model = $this->cardTypeRepository->getByUserId($this->user)->first();
 
-        return $this->user()->can('create', $model->user);
+        return $this->user()->can('create', CardType::class);
     }
 
     /**
@@ -36,10 +37,14 @@ class StoreCardRequest extends FormRequest
      */
     public function rules(): array
     {
-        $verification = $this->verificationRepository->getByUserId($this->user)->first();
-        
+
+        $card_id = auth()->user()->verification->card->id;
+    
         return [
-            'bvn' => ['required', 'string', 'digits:11', 'unique:verifications,bvn,'.$verification->id],
+            'card_id' => ['required', 'string', 'max:255', 'exists:card_types,id'],
+            'card_number' => ['required', 'string', 'max_digits:255', 'unique:cards,number,'.$card_id],
+            'front' => ['required', 'image', 'mimes:jpg,png,jpeg', 'max:2048'],
+            'back' => ['nullable', 'image', 'mimes:jpg,png,jpeg', 'max:2048'],
         ];
     }
 
@@ -60,10 +65,10 @@ class StoreCardRequest extends FormRequest
         return [
             function (Validator $validator) {
 
-                $account_no = (int)$this->phone_no;
-                $accountExist = $this->accountRepository->getByAccountNo($account_no)->first();
+                $card_id = $this->card_id;
+                $card = $this->cardTypeRepository->fetch($card_id)->first();
                 
-                if ($accountExist) {
+                if ($card->doc_no > 1) {
                     $validator->errors()->add(
                         'account',
                         'Account number ('. $account_no .') already taken by another user!'
@@ -71,5 +76,6 @@ class StoreCardRequest extends FormRequest
                 }
             }
         ];
+
     } */
 }

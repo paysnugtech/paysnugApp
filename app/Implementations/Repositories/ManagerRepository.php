@@ -28,6 +28,16 @@ class ManagerRepository implements IManagerRepository{
     {
         return Manager::select("*")->inRandomOrder();
     }
+
+    
+    public function store(Manager $manager)
+    {
+
+        $obj = $manager->save();
+        
+        return $obj;
+    }
+
     
     public function update(Manager $manager, $data){
         

@@ -15,7 +15,10 @@ return new class extends Migration
         Schema::create('cards', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->string('number')->nullable();
+            $table->string('front_url')->nullable();
+            $table->string('back_url')->nullable();
             $table->tinyInteger('is_verified')->default(VerificationEnum::NotVerified->value);
+            $table->string('remark')->nullable();
             $table->string('user_id');
             $table->string('verification_id');
             $table->string('updated_by')->nullable();
@@ -23,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('verification_id')->references('id')->on('verifications')->onDelete('cascade');
+            $table->foreign('verification_id')->references('id')->on('verifications')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 

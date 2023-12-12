@@ -16,14 +16,14 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('other_name');
             $table->string('phone_no');
-            $table->string('gender');
-            $table->string('dob');
-            $table->string('image')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('dob')->nullable();
+            $table->string('picture_url')->nullable();
             $table->string('user_id');
             $table->softDeletes();
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 

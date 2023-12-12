@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreWalletRequest;
 use App\Http\Requests\UpdateWalletRequest;
 use App\Interfaces\Services\IWalletService;
+use Illuminate\Support\Facades\Auth;
 
 class WalletsController extends Controller
 {
@@ -59,12 +60,15 @@ class WalletsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function user(string $id)
+    public function user()
     {
-        
-        $response = $this->walletService->getWalletByUserId($id);
+        $id = Auth::id();
 
-        return $response;
+        print_r('test');
+
+        /* $response = $this->walletService->getWalletByUserId($id);
+
+        return $response; */
     }
 
 

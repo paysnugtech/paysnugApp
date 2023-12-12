@@ -15,7 +15,9 @@ return new class extends Migration
         Schema::create('bills', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->string('number')->nullable();
+            $table->string('url')->nullable();
             $table->tinyInteger('is_verified')->default(VerificationEnum::NotVerified->value);
+            $table->string('remark')->nullable();
             $table->string('user_id');
             $table->string('verification_id');
             $table->string('updated_by')->nullable();

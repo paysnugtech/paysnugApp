@@ -4,13 +4,16 @@
 namespace App\Implementations\Services;
 
 use App\Enums\VerificationEnum;
-use App\Http\Resources\NotificationsResource;
-use App\Http\Resources\ProfilesResource;
+use App\Http\Resources\BvnsResource;
+use App\Http\Resources\CardTypesResource;
 use App\Http\Resources\UsersResource;
 use App\Http\Resources\VerificationsResource;
 use App\Interfaces\Repositories\IAccountRepository;
 use App\Interfaces\Repositories\IAddressRepository;
 use App\Interfaces\Repositories\IBankRepository;
+use App\Interfaces\Repositories\IBillRepository;
+use App\Interfaces\Repositories\ICardRepository;
+use App\Interfaces\Repositories\ICardTypeRepository;
 use App\Interfaces\Repositories\ICountryRepository;
 use App\Interfaces\Repositories\IManagerRepository;
 use App\Interfaces\Repositories\INotificationRepository;
@@ -18,8 +21,10 @@ use App\Interfaces\Repositories\IProfileRepository;
 use App\Interfaces\Repositories\IRoleRepository;
 use App\Interfaces\Repositories\IUserRepository;
 use App\Interfaces\Repositories\IVerificationRepository;
-use App\Interfaces\Repositories\IWalletRepository;
 use App\Interfaces\Services\IVerificationService;
+use App\Models\Address;
+use App\Models\Card;
+use App\Traits\VerificationTrait;
 use Illuminate\Http\Request;
 use App\Traits\CreateAccount;
 use App\Traits\CreateSnugAccount;
@@ -33,6 +38,7 @@ use App\Traits\UploadProfilePicture;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Policies\UserPolicy;
 
@@ -47,46 +53,61 @@ class VerificationService implements IVerificationService
         ErrorResponse,
         SuccessResponse, 
         TokenResponse, 
-        UploadProfilePicture;
+        UploadProfilePicture,
+        VerificationTrait;
 
     protected $accountRepository;
     protected $addressRepository;
-    protected $bankRepository;
+    protected $billRepository;
+    protected $cardRepository;
+    protected $cardTypeRepository;
     protected $countryRepository;
-    protected $managerRepository;
     protected $notificationRepository;
     protected $profileRepository;
     protected $roleRepository;
     protected $userRepository;
-    protected $userPolicy;
     protected $verificationRepository;
 
+    
     public function __construct(
         IAccountRepository $accountRepository, 
         IAddressRepository $addressRepository, 
-        IBankRepository $bankRepository, 
+        IBillRepository $billRepository,  
+        ICardRepository $cardRepository,  
+        ICardTypeRepository $cardTypeRepository,  
         ICountryRepository $countryRepository, 
-        IManagerRepository $managerRepository, 
-        INotificationRepository $notificationRepository, 
-        IProfileRepository $profileRepository, 
-        IRoleRepository $roleRepository, 
+        INotificationRepository $notificationRepository,
         IUserRepository $userRepository, 
-        UserPolicy $userPolicy, 
         IVerificationRepository $verificationRepository
     )
     {
 
         $this->accountRepository = $accountRepository;
         $this->addressRepository = $addressRepository;
-        $this->bankRepository = $bankRepository;
+        $this->billRepository = $billRepository;
+        $this->cardRepository = $cardRepository;
+        $this->cardTypeRepository = $cardTypeRepository;
         $this->countryRepository = $countryRepository;
-        $this->managerRepository = $managerRepository;
         $this->notificationRepository = $notificationRepository;
-        $this->profileRepository = $profileRepository;
-        $this->roleRepository = $roleRepository;
         $this->userRepository = $userRepository;
-        $this->userPolicy = $userPolicy;
         $this->verificationRepository = $verificationRepository;
+    }
+    
+    
+    
+    public function getAllVerification(){
+
+        $user = $this->verificationRepository->getAll();
+
+        if($user->count() < 1)
+        {
+            return $this->ErrorResponse([], 'No record found', 404);
+        }
+
+        $resource = UsersResource::collection($user);
+
+        return $this->successResponse($resource, 'Successful');
+
     }
     
     public function getVerification(string $id){
@@ -108,26 +129,11 @@ class VerificationService implements IVerificationService
         );
     }
     
-    public function getAllVerification(){
-
-        $user = $this->verificationRepository->getAll();
-
-        if($user->count() < 1)
-        {
-            return $this->ErrorResponse([], 'No record found', 404);
-        }
-
-        $resource = UsersResource::collection($user);
-
-        return $this->successResponse($resource, 'Successful');
-
-    }
-    
     
     public function storeVerification($request){
 
 
-        DB::beginTransaction();
+        /* DB::beginTransaction();
 
         // Save User
         $newUser = $this->CreateUser($request);
@@ -171,7 +177,7 @@ class VerificationService implements IVerificationService
             new UsersResource($user),
             $token,
             'Created Successful'
-        );
+        ); */
     }
     
     
@@ -203,25 +209,85 @@ class VerificationService implements IVerificationService
     }
 
 
-    public function verifyBill($request, $id)
+    public function verifyBill($request, $user)
     {
         $validated = $request->validated();
 
-        $verification = $this->verificationRepository->getByUserId($id)->firstOrFail();
+        $verification = $user->verification;
 
-        // Verify the bvn
+        if (!$request->file('bill')->isValid()) 
+        {
+            return $this->errorResponse(
+                [], 
+                'Invalid bill uploaded'
+            );
+        }
 
+        $uploadFile = $request->file('bill');
+
+        if($verification->bill->is_verified)
+        {
+            return $this->errorResponse(
+                [], 
+                'User utility bill already verified'
+            );
+        }
+
+
+
+        // Verify the bill
+        $data = [
+            'doc_type' => 'utility',
+            'file' => base64_encode(file_get_contents($uploadFile)),
+            'name' => $user->id,
+        ];
+
+
+
+        $uploadBill = $this->uploadUtilityBill($data);
+        // $uploadBill = $this->uploadBill1($data);
+
+
+        if(!$uploadBill->success)
+        {
+            return $this->errorResponse(
+                [], 
+                $uploadBill->message
+            );
+        }
+
+        $verification->attempt += 1;
+        $verification->updated_by = $user->id;
+
+        
+        $bill = $verification->bill;
+        $bill->url = $uploadBill->data->url;
+        $bill->updated_by = $user->id;
+
+        $address = new Address;
+        $address->city = $validated['city'];
+        $address->country = $validated['country'];
+        $address->postal_code = $validated['postal_code'] ?? NULL;
+        $address->profile_id = $user->profile->id;
+        $address->street = $validated['street'];
 
 
         // store the bvn
         DB::beginTransaction();
+        
+        $this->addressRepository->store($address);
 
-        $data = [
-            'number' => $validated['bvn'],
-            'is_verified' => VerificationEnum::Verified->value,
-        ];
+        $this->verificationRepository->store($verification);
 
-        $verification->bill()->update($data);
+        $updateBill = $this->billRepository->store($bill);
+
+        if(!$updateBill)
+        {
+            return $this->errorResponse(
+                [], 
+                'Unable to update bill'
+            );
+        }
 
         DB::commit();
 
@@ -232,14 +298,16 @@ class VerificationService implements IVerificationService
     }
 
 
-    public function verifyBvn($request, $id)
+    public function verifyBvn($request)
     {
         $validated = $request->validated();
 
-        $verification = $this->verificationRepository->getByUserId($id)->firstOrFail();
+        $user = Auth::user();
+
+        $verification = $this->verificationRepository->getByUserId($user->id)->firstOrFail();
 
         // Verify the bvn
-
+        
 
 
         // store the bvn
@@ -255,17 +323,19 @@ class VerificationService implements IVerificationService
         DB::commit();
 
         return $this->successResponse(
-            new VerificationsResource($verification), 
+            new BvnsResource($verification->bvn), 
             'Successful'
         );
     }
 
 
-    public function verifyCard($request, $id)
+    public function verifyCard($request)
     {
         $validated = $request->validated();
 
-        $verification = $this->verificationRepository->getByUserId($id)->firstOrFail();
+        $user = Auth::user();
+
+        $verification = $this->verificationRepository->getByUserId($user->id)->firstOrFail();
 
         // Verify the bvn
 
@@ -288,17 +358,11 @@ class VerificationService implements IVerificationService
             'Successful'
         );
     }
+
     
     public function deleteVerification(string $id){
         
         $verification = $this->verificationRepository->get($id)->firstOrFail();
-
-        if (!$this->userPolicy->delete(Auth::user(), $verification)) {
-            return $this->errorResponse(
-                '', 
-                'You are not authorized to delete this user.'
-            );
-        }
 
         $delete = $this->verificationRepository->delete($verification);
 

@@ -13,7 +13,7 @@ interface IDeviceRepository{
     public function get(string $id);
     public function getAll();
     public function getByUserId($user_id);
-    public function save(Device $device);
+    public function store(Device $device);
     public function update(Device $device, $data);
     public function delete(Device $device);
 

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
+use App\Models\ServiceType;
 use App\Models\WalletType;
 use Database\Seeders\BankSeeder;
 use Database\Seeders\CountrySeeder;
@@ -31,6 +32,7 @@ class DatabaseSeeder extends Seeder
             BankSeeder::class,
             ManagerSeeder::class,
             RoleSeeder::class,
+            ServiceSeeder::class,
             WalletTypeSeeder::class,
         ]);
     }

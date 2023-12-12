@@ -6,6 +6,7 @@ use App\Interfaces\Repositories\IBvnRepository;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Auth;
 
 class StoreBvnRequest extends FormRequest
 {
@@ -25,9 +26,9 @@ class StoreBvnRequest extends FormRequest
     public function authorize(): bool
     {
         
-        $model = $this->bvnRepository->getByUserId($this->user)->first();
+        $user = Auth::user();
         
-        return $this->user()->can('create', $model->user);
+        return $this->user()->can('create', $user);
     }
 
     /**
@@ -37,9 +38,11 @@ class StoreBvnRequest extends FormRequest
      */
     public function rules(): array
     {
-        $bvn = $this->bvnRepository->getByUserId($this->user)->first();
+
+        $bvn_id = auth()->user()->verification->bvn->id;
+
         return [
-            'bvn' => ['required', 'string', 'digits:11', 'unique:bvns,number,'.$bvn->id],
+            'bvn' => ['required', 'string', 'digits:11', 'unique:bvns,number,'.$bvn_id],
         ];
     }
 

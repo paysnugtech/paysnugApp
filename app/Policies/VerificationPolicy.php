@@ -24,13 +24,15 @@ class VerificationPolicy
         return $user->id === $verification->user_id;
     }
 
+
     /**
      * Determine whether the user can create models.
      */
     public function create(User $user, $model): bool
     {
-        return $user->id === $model->id;
+        return $user->id === $model->user_id;
     }
+
 
     /**
      * Determine whether the user can update the model.

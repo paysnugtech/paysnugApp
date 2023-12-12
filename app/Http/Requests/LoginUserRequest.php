@@ -28,12 +28,13 @@ class LoginUserRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email', 'exists:users,email', 'max:255'],
-            'password' => ['required', 'string'],
-            'token' => ['required', 'exists:device_verification_tokens,token'],
+            'password' => ['required', 'string', 'max:255'],
+            'signature' => ['required', 'string', 'max:255'],
+            /* 'token' => ['required', 'exists:device_verification_tokens,token'],
             'device_name' => ['required', 'string', 'min:3', 'max:255'],
             'device_id' => ['required', 'string', 'min:3', 'max:255'],
             'device_type' => ['required', new Enum(DeviceTypeEnum::class)],
-            'platform' => ['required', new Enum(DevicePlatformEnum::class)],
+            'platform' => ['required', new Enum(DevicePlatformEnum::class)], */
         ];
     }
 

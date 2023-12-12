@@ -18,11 +18,8 @@ class AccountsResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id' => $this->id,
-            'balance' => $this->balance,
-            'country' => $this->country,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at
+            'account_name' => $this->account_name,
+            'account_number' => $this->account_number
         ];
 
     }

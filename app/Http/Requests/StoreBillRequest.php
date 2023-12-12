@@ -3,20 +3,15 @@
 namespace App\Http\Requests;
 
 use App\Interfaces\Repositories\IVerificationRepository;
+use App\Traits\ResponseTrait;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreBillRequest extends FormRequest
 {
-    protected $verificationRepository;
 
-    public function __construct(
-        IVerificationRepository $verificationRepository
-    )
-    {
-        $this->verificationRepository = $verificationRepository;
-    }
+    use ResponseTrait;
 
 
     /**
@@ -24,9 +19,9 @@ class StoreBillRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $model = $this->verificationRepository->getByUserId($this->user)->first();
+        $user = auth()->user();
 
-        return $this->user()->can('create', $model->user);
+        return $this->user()->can('create', $user->verification);
     }
 
     /**
@@ -36,22 +31,24 @@ class StoreBillRequest extends FormRequest
      */
     public function rules(): array
     {
-        $verification = $this->verificationRepository->getByUserId($this->user)->first();
         
         return [
-            'bill' => ['required', 'string', 'digits:11', 'unique:verifications,bvn,'.$verification->id],
+            'bill' => ['required', 'image', 'mimes:jpg,png,jpeg', 'max:2048'],
+            'city' => ['required', 'string', 'min:3', 'max:255'],
+            'country' => ['required', 'string', 'min:3', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'min:3', 'max:255'],
+            'street' => ['required', 'string', 'min:3', 'max:255'],
         ];
     }
 
 
     public function failedValidation(Validator $validator)
     {
-        throw new HttpResponseException(response()->json([
-            'status' => 'failed',
-            'message' => 'Validation error!',
-            'error' => $validator->errors(),
-        ],
-        422));
+        throw new HttpResponseException($this->errorResponse(
+            422,
+            'Validation error!',
+            $validator->errors()
+        ));
     }
 
 

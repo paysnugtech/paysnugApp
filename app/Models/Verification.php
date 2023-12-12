@@ -28,9 +28,11 @@ class Verification extends Model
     protected $fillable = [
         'id',
         'level',
-        'status',
+        'attempt',
+        'email_verified',
+        'phone_verified',
         "user_id",
-        "created_by",
+        'status',
         "updated_by",
     ];
 
@@ -38,7 +40,6 @@ class Verification extends Model
         'id',
         'status',
         "user_id",
-        "created_by",
         "updated_by",
         'deleted_at',
         'created_at',

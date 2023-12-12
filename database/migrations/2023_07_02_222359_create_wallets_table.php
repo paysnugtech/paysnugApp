@@ -16,13 +16,16 @@ return new class extends Migration
     {
         Schema::create('wallets', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->string('user_id');
             $table->decimal('balance')->default(0);
-            $table->string('country_id');
-            $table->integer('is_limited')->default(WalletLimitedStatusEnum::False->value);
-            $table->integer('is_locked')->default(WalletLockedStatusEnum::False->value);
-            $table->string('wallet_type_id');
+            $table->boolean('is_limited')->default(WalletLimitedStatusEnum::True->value);
+            $table->boolean('is_locked')->default(WalletLockedStatusEnum::False->value);
+            $table->boolean('is_inflow_allow')->default(true);
+            $table->boolean('is_outflow_allow')->default(true);
+            $table->boolean('is_interest')->default(false);
             $table->string('matured_at')->nullable();
+            $table->string('user_id');
+            $table->string('country_id');
+            $table->string('wallet_type_id');
             $table->string('created_by');
             $table->string('updated_by')->nullable();
             $table->softDeletes();

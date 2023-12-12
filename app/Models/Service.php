@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class Service extends Model
 {
     
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids;
+    use HasFactory, Notifiable, SoftDeletes, HasUuids;
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -27,8 +28,12 @@ class Service extends Model
      */
     protected $fillable = [
         'id',
-        'is_transfer',
-        'is_bill',
+        'name',
+        'discount',
+        'charges',
+        'fee',
+        'duplicate_time',
+        'updated_by',
         'user_id'
     ];
 
@@ -38,9 +43,10 @@ class Service extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'is_transfer' => ServiceStatusEnum::class,
-        'is_bill' => ServiceStatusEnum::class,
+        /* 'transfer_allow' => ServiceStatusEnum::class,
+        'bill_allow' => ServiceStatusEnum::class */
     ];
+
 
     /**
      * The attributes that should be hidden for serialization.

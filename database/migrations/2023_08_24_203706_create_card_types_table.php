@@ -15,6 +15,8 @@ return new class extends Migration
             $table->string('id')->primary();
             $table->string('name')->unique();
             $table->longText('description')->nullable();
+            $table->string('doc_type');
+            $table->integer('doc_no');
             $table->integer('status');
             $table->string('created_by');
             $table->string('updated_by')->nullable();

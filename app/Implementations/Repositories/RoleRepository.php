@@ -28,17 +28,27 @@ class RoleRepository implements IRoleRepository{
     {
         return Role::where('name', $name);
     }
-    
-    public function update(Role $role, $data){
-        
-        $role->update($data);
 
-        return $role;
+    public function store(Role $obj)
+    {
+
+        $save = $obj->save();
+
+        return $save;
     }
     
-    public function delete(Role $role){
+    public function update(Role $obj, $data){
+        
+        $update = $obj->update($data);
 
-        return $role->delete();
+        return $update;
+    }
+    
+    public function delete(Role $obj){
+
+        $delete = $obj->delete();
+
+        return $delete;
     }
     
 }

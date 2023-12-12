@@ -3,27 +3,23 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
-use App\Http\Requests\UpdatePasswordRequest;
 use App\Interfaces\Repositories\IPasswordResetRepository;
 use App\Interfaces\Services\IPasswordService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Traits\ErrorResponse;
 use App\Traits\SuccessResponse;
 
 class PasswordsController extends Controller
 {
-    use ErrorResponse, SuccessResponse;
 
-    protected $passwordResetRepository;
     protected $passwordService;
 
 
-    public function __construct(IPasswordResetRepository $passwordResetRepository, IPasswordService $passwordService)
+    public function __construct(IPasswordService $passwordService)
     {
-        $this->passwordResetRepository = $passwordResetRepository;
         $this->passwordService = $passwordService;
     }
 
@@ -54,38 +50,10 @@ class PasswordsController extends Controller
      */
     public function reset(ResetPasswordRequest $request)
     {
-        $validated = $request->validated();
 
-        $data = $this->passwordResetRepository->getByEmailAndToken($validated);
+        $response = $this->passwordService->resetPassword($request);
 
-        if(!$data->exists())
-        {
-            return $this->errorResponse(
-                [
-                    'token' => 'Token is not valid'
-                ], 
-                'Token validation error',
-                422
-            );
-        }
-
-        $difference = Carbon::now()->diffInSeconds($data->first()->created_at);
-
-        if($difference > 3600)
-        {
-            return $this->errorResponse(
-                [
-                    'token' => 'Token Expired',
-                ], 
-                'Token validation error',
-                400
-            );
-        }
-
-
-        $reset = $this->passwordService->resetPassword($validated);
-
-        return $reset;
+        return $response;
     }
 
 
@@ -103,11 +71,13 @@ class PasswordsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePasswordRequest $request, string $id)
+    public function change(ChangePasswordRequest $request)
     {
-        $update = $this->passwordService->updatePassword($request, $id);
+        $user = auth()->user();
 
-        return $update;
+        $response = $this->passwordService->changePassword($user, $request);
+
+        return $response;
     }
 
     /**

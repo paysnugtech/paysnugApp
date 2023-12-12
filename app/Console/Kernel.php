@@ -12,9 +12,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('app:daily-transaction-limit')->daily();
+        $schedule->command('app:monthly-transaction-limit')->monthly();
+        $schedule->command('app:delete-expire-token')->daily();
     }
 
+    
     /**
      * Register the commands for the application.
      */

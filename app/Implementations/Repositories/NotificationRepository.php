@@ -28,6 +28,15 @@ class NotificationRepository implements INotificationRepository{
     {
         return Notification::where('user_id', $user_id);
     }
+
+    
+    public function store(Notification $notification)
+    {
+
+        $obj = $notification->save();
+        
+        return $obj;
+    }
     
     public function update(Notification $notification, $data){
         

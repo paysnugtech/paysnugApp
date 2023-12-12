@@ -11,14 +11,14 @@ class LogRepository implements ILogRepository{
 
     public function create($data){
 
-        $log = Log::create($data);
+        $obj = Log::create($data);
 
-        return $log;
+        return $obj;
     }
     
-    public function delete(Log $log){
+    public function delete(Log $obj){
 
-        return $log->delete();
+        return $obj->delete();
     }
     
     public function get(string $id){
@@ -44,7 +44,7 @@ class LogRepository implements ILogRepository{
 
 
     
-    public function save(Log $log)
+    public function store(Log $log)
     {
 
         $obj = $log->save();
@@ -53,11 +53,11 @@ class LogRepository implements ILogRepository{
     }
 
     
-    public function update(Log $log, $data){
+    public function update(Log $obj, $data){
         
-        $log->update($data);
+        $obj->update($data);
 
-        return $log;
+        return $obj;
     }
     
 }

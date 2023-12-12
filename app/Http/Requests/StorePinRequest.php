@@ -6,6 +6,7 @@ use App\Interfaces\Repositories\IUserRepository;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Auth;
 
 class StorePinRequest extends FormRequest
 {
@@ -22,7 +23,7 @@ class StorePinRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $user = $this->userRepository->get($this->user)->first();
+        $user = Auth::user();
 
         return $this->user()->can('update', $user);
     }
@@ -36,7 +37,7 @@ class StorePinRequest extends FormRequest
     {
         
         return [
-            'pin' => ['required', 'string', 'digits:6'],
+            'pin' => ['required', 'string', 'digits:4'],
         ];
     }
 

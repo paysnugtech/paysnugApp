@@ -5,7 +5,8 @@ namespace App\Interfaces\Services;
 
 interface IProfileService{
 
-    public function storeProfile($data);
+    public function storeProfile($request);
+    public function storeProfilePicture($request);
     public function getAllProfile();
     public function getProfile(string $id);
     public function getProfileByUserId(string $user_id);

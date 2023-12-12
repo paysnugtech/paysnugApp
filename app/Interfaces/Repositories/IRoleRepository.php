@@ -13,6 +13,7 @@ interface IRoleRepository{
     public function get(string $id);
     public function getAll();
     public function getByName($name);
+    public function store(Role $role);
     public function update(Role $role, $data);
     public function delete(Role $role);
 

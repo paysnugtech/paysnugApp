@@ -6,15 +6,17 @@ namespace App\Models;
 
 use App\Models\Device;
 use App\Models\DeviceToken;
+use App\Models\Level;
 use App\Models\Log;
 use App\Models\Service;
 use App\Models\Verification;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -23,10 +25,8 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
     
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasUuids;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, UUID;
 
-    public $incrementing = false;
-    protected $keyType = 'string';
     protected $dates = ['deleted_at'];
 
     /**
@@ -38,7 +38,6 @@ class User extends Authenticatable implements JWTSubject
         'id',
         'email',
         'password',
-        'level',
         'finger_print',
         'pin',
         'role_id',
@@ -53,6 +52,8 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $hidden = [
         'password',
+        'finger_print',
+        'pin',
         'remember_token',
     ];
 
@@ -73,17 +74,85 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
+    public function airtimeBeneficiary(string $id)
+    {
+        return $this->airtimeBeneficiaries()->where('id', $id)->first();
+    }
+
+
+    public function airtimeBeneficiaries(): HasMany
+    {
+        return $this->hasMany(AirtimeBeneficiary::class);
+    }
+
+
+    public function bankBeneficiary(string $id)
+    {
+        return $this->airtimeBeneficiaries()->where('id', $id)->first();
+    }
+
+
+    public function bankBeneficiaries(): HasMany
+    {
+        return $this->hasMany(BankBeneficiary::class);
+    }
+
+
+    public function cableBeneficiary(string $id)
+    {
+        return $this->cableBeneficiaries()->where('id', $id)->first();
+    }
+
+
+    public function cableBeneficiaries(): HasMany
+    {
+        return $this->hasMany(CableBeneficiary::class);
+    }
+
+
+    public function dataBeneficiary(string $id)
+    {
+        return $this->cableBeneficiaries()->where('id', $id)->first();
+    }
+
+
+    public function dataBeneficiaries(): HasMany
+    {
+        return $this->hasMany(DataBeneficiary::class);
+    }
+
+
     public function device(): HasOne
     {
         return $this->hasOne(Device::class);
     }
 
 
+    
     /* public function deviceToken(): HasOne
     {
         return $this->hasOne(DeviceToken::class, 'device_token_id');
     } */
 
+
+    public function electricityBeneficiary(string $id)
+    {
+        return $this->electricityBeneficiaries()->where('id', $id)->first();
+    }
+
+
+    public function electricityBeneficiaries(): HasMany
+    {
+        return $this->hasMany(ElectricityBeneficiary::class);
+    }
+
+
+    public function level(): HasOne
+    {
+        return $this->hasOne(Level::class);
+    }
+
+    
 
     public function log(): HasOne
     {
@@ -97,10 +166,12 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
+
     public function notification(): HasOne
     {
         return $this->hasOne(Notification::class);
     }
+
 
 
     public function profile(): HasOne
@@ -109,15 +180,50 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
+
     public function role():BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
 
-    public function service(): HasOne
+
+    /* public function service(): HasOne
     {
         return $this->hasOne(Service::class);
+    } */
+    
+
+
+    public function serviceById($id)
+    {
+        return Service::where('id', $id)->first();
+    }
+    
+
+
+    public function serviceByName($name)
+    {
+        return $this->services->where('name', $name)->first();
+
+    }
+
+
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class)->withPivot('is_allow', 'is_free', 'free_count');
+    }
+
+
+    public function transaction($id)
+    {
+        return $this->transactions->where('id', $id)->first();
+    }
+
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
     }
 
 
@@ -127,10 +233,18 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
+    public function wallet($id)
+    {
+        return $this->wallets->where('id', $id)->first();
+    }
+
+
     public function wallets(): HasMany
     {
         return $this->hasMany(Wallet::class);
     }
+
+
 
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
@@ -141,6 +255,8 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->getKey();
     }
+
+
 
     /**
      * Return a key value array, containing any custom claims to be added to the JWT.

@@ -3,9 +3,11 @@
 
 namespace App\Implementations\Services;
 
+use App\Enums\TokenTypeEnum;
 use App\Http\Resources\NotificationsResource;
 use App\Http\Resources\ProfilesResource;
 use App\Http\Resources\UsersResource;
+use App\Http\Resources\WalletsResource;
 use App\Interfaces\Repositories\IAccountRepository;
 use App\Interfaces\Repositories\IAddressRepository;
 use App\Interfaces\Repositories\IBankRepository;
@@ -14,50 +16,48 @@ use App\Interfaces\Repositories\IManagerRepository;
 use App\Interfaces\Repositories\INotificationRepository;
 use App\Interfaces\Repositories\IProfileRepository;
 use App\Interfaces\Repositories\IRoleRepository;
+use App\Interfaces\Repositories\ITokenRepository;
 use App\Interfaces\Repositories\IUserRepository;
 use App\Interfaces\Repositories\IVerificationRepository;
 use App\Interfaces\Repositories\IWalletRepository;
 use App\Interfaces\Services\IUserService;
-use App\Traits\StoreVerification;
-use Illuminate\Http\Request;
 use App\Models\Address;
-use App\Traits\CreateAccount;
-use App\Traits\CreateSnugAccount;
-use App\Traits\CreateUser;
+use App\Traits\AccountTrait;
 use App\Traits\CreateAddress;
-use App\Traits\CreateDefaultWallet;
-use App\Traits\ErrorResponse;
-use App\Traits\SuccessResponse;
-use App\Traits\TokenResponse;
-use App\Traits\UploadProfilePicture;
+use App\Traits\EmailTrait;
+use App\Traits\ResponseTrait;
+use App\Traits\StatusTrait;
+use App\Traits\StoreVerification;
+use App\Traits\UserTrait;
+use App\Traits\WalletTrait;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Policies\UserPolicy;
 
-
 class UserService implements IUserService
 {
-    use CreateUser,  
-        CreateAccount,
+    use AccountTrait,
         CreateAddress,
-        CreateSnugAccount,
-        CreateDefaultWallet,
-        ErrorResponse,
+        EmailTrait,
+        ResponseTrait,
+        StatusTrait,
         StoreVerification,
-        SuccessResponse, 
-        TokenResponse, 
-        UploadProfilePicture;
+        UserTrait,
+        WalletTrait;
 
     protected $accountRepository;
     protected $addressRepository;
     protected $bankRepository;
     protected $countryRepository;
+    protected $expires_in;
     protected $managerRepository;
     protected $notificationRepository;
     protected $profileRepository;
     protected $roleRepository;
+    protected $tokenRepository;
     protected $userRepository;
     protected $userPolicy;
     protected $verificationRepository;
@@ -72,13 +72,14 @@ class UserService implements IUserService
         INotificationRepository $notificationRepository, 
         IProfileRepository $profileRepository, 
         IRoleRepository $roleRepository, 
+        ITokenRepository $tokenRepository, 
         IUserRepository $userRepository, 
         UserPolicy $userPolicy, 
         IVerificationRepository $verificationRepository,
         IWalletRepository $walletRepository,
     )
     {
-
+        $this->expires_in = env('TOKEN_EXPIRES');
         $this->accountRepository = $accountRepository;
         $this->addressRepository = $addressRepository;
         $this->bankRepository = $bankRepository;
@@ -87,6 +88,7 @@ class UserService implements IUserService
         $this->notificationRepository = $notificationRepository;
         $this->profileRepository = $profileRepository;
         $this->roleRepository = $roleRepository;
+        $this->tokenRepository = $tokenRepository;
         $this->userRepository = $userRepository;
         $this->userPolicy = $userPolicy;
         $this->verificationRepository = $verificationRepository;
@@ -127,14 +129,173 @@ class UserService implements IUserService
 
     }
     
-    public function setPin($request, $id)
+    public function getWallet($user){
+
+        $resource = WalletsResource::collection($user->wallets);
+
+        return $this->successResponse($resource, 'Successful');
+
+    }
+    
+    public function changePin($request, $user)
     {
         $validated = $request->validated();
+        $new_pin = $validated['new_pin'];
+        // $token = $validated['token'];
+        $type = TokenTypeEnum::ChangePin->value;
 
-        $user = $this->userRepository->get($id)->firstOrFail();
+        /* $tokenObj = $this->tokenRepository->fetchByEmailNumberType($user->email, $token, $type)->first();
 
-        // $token = Str::random(6);
-        $token = random_int(101010, 999999);
+        if(!$tokenObj)
+        {
+            return $this->errorResponse(
+                422, 
+                'Not found error'
+            );
+        }
+
+
+        if($this->tokenExpire($tokenObj))
+        {
+            return $this->errorResponse(
+                400,
+                'Token validation error',
+                [
+                    'token' => 'Token Expired',
+                ], 
+            );
+        } */
+
+
+        if (!Hash::check($validated['current_pin'], $user->pin)) 
+        {
+            return $this->errorResponse(
+                message: 'Pin validation error',
+                errors: [
+                    'current_pin'=> 'Current pin is not correct.',
+                ]
+            );
+        }
+
+        $user->pin = bcrypt($new_pin);
+
+        DB::beginTransaction();
+
+            $resetPin = $this->userRepository->store($user);
+
+            if(!$resetPin)
+            {
+                return $this->errorResponse(
+                    message: 'Unable to reset Pin'
+                );
+            }
+
+            // $this->tokenRepository->delete($tokenObj);
+
+        DB::commit();
+
+        
+
+        // Sent the registration token to email/phone
+        $sendEmail = $this->sendChangePinSuccessEmail($user);
+
+
+        if(!$sendEmail->success)
+        {
+            /* return $this->errorResponse(
+                message: $sendEmail->message
+            ); */
+        }
+
+
+        return $this->successResponse(
+            message: 'Pin change successful',
+            // data: new UsersResource($user), 
+        );
+    }
+    
+    public function resetPin($request, $user)
+    {
+        $validated = $request->validated();
+        $pin = $validated['pin'];
+        $token = $validated['token'];
+        $type = TokenTypeEnum::ResetPin->value;
+
+        $tokenObj = $this->tokenRepository->fetchByEmailNumberType($user->email, $token, $type)->first();
+
+        if(!$tokenObj)
+        {
+            return $this->errorResponse(
+                422, 
+                'Not found error'
+            );
+        }
+
+
+        $difference = Carbon::now()->diffInMinutes($tokenObj->created_at);
+
+        if($difference > $this->expires_in)
+        {
+            return $this->errorResponse(
+                400,
+                'Token validation error',
+                [
+                    'token' => 'Token Expired',
+                ], 
+            );
+        }
+
+
+        if (Hash::check($pin, $user->pin)) 
+        {
+            return $this->errorResponse(
+                message: 'Pin validation error',
+                errors: [
+                    'pin'=> 'New pin and old pin cannot be the same.',
+                ]
+            );
+        }
+
+        $user->pin = bcrypt($pin);
+
+        DB::beginTransaction();
+
+            $resetPin = $this->userRepository->store($user);
+
+            if(!$resetPin)
+            {
+                return $this->errorResponse(
+                    message: 'Unable to reset Pin'
+                );
+            }
+
+            $this->tokenRepository->delete($tokenObj);
+
+        DB::commit();
+
+        
+
+        // Sent the registration token to email/phone
+        $sendEmail = $this->sendResetPinSuccessEmail($user);
+
+
+        if(!$sendEmail->success)
+        {
+            /* return $this->errorResponse(
+                message: $sendEmail->message
+            ); */
+        }
+
+
+        return $this->successResponse(
+            message: 'Pin reset successful',
+            // data: new UsersResource($user), 
+        );
+    }
+    
+    public function setPin($request, $user)
+    {
+        $validated = $request->validated();
 
         DB::beginTransaction();
 
@@ -149,83 +310,36 @@ class UserService implements IUserService
     }
 
 
-    public function storeFingerPrint($request, $id){
+    public function storeFingerPrint($request, $user){
 
         $validated = $request->validated();
 
-        $user = $this->userRepository->get($id)->firstOrFail();
+        $user->finger_print = $validated['finger_print'];
 
         DB::beginTransaction();
 
-        $setPin = $this->userRepository->update($user, $validated);
+            $store = $this->userRepository->store($user);
+
+            if(!$store)
+            {
+                
+                return $this->errorResponse( 
+                    message: 'Unable to store finger print'
+                );
+            }
 
         DB::commit();
 
-        return $this->successResponse(
-            new UsersResource($user), 
-            'Finger Print Set Successful'
+        return $this->successResponse( 
+            message: 'Finger Print Set Successful'
         );
     }
     
-    public function storeUser($request){
-
-
-        DB::beginTransaction();
-
-        // Save User
-        $newUser = $this->CreateUser($request);
-
-        // Create Wallet
-        $newWallet = $this->CreateDefaultWallet($newUser, $request);
-
-        // Create Account
-        $account = $this->CreateAccount($newUser, $newWallet);
-
-
-        if(!$account)
-        {
-            $account_no = (int)$newUser->phone_no;
-
-            return $this->errorResponse(
-                [], 
-                'Account number ('. $account_no .') Already taken by another user'
-            );
-        }
-
-
-        // Save Notification
-        $notification = $this->notificationRepository->create([
-            'user_id' => $newUser->id
-        ]);
-
-
-        // Store verification
-        $verification = $this->StoreVerification($newUser);
-
-        
-        DB::commit();
-
-        // send notification
-        
-
-        // get created user
-        $user = $this->userRepository->get($newUser->id)->firstOrFail();
-
-        $token = Auth::login($user);
-
-
-        return $this->tokenResponse(
-            new UsersResource($user),
-            $token,
-            'Created Successful'
-        );
-    }
-    
-    public function updateNotification($request, $id)
+    public function updateNotification($request, $user)
     {
         $validated = $request->validated();
 
-        $notification = $this->notificationRepository->getByUserId($id)->firstOrFail();
+        $notification = $user->notification;
 
         DB::beginTransaction();
 
@@ -239,11 +353,11 @@ class UserService implements IUserService
         );
     }
     
-    public function updateProfile($request, $id)
+    public function updateProfile($request, $user)
     {
         $validated = $request->validated();
 
-        $profile = $this->profileRepository->getByUserId($id)->firstOrFail();
+        $profile = $user->profile;
 
         $validated['image'] = $validated['profile_image'] ?? $profile->image;
         // $validated['country'] = $country->name;
@@ -251,11 +365,7 @@ class UserService implements IUserService
         DB::beginTransaction();
 
         $updateProfile = $this->profileRepository->update($profile, $validated);
-        
-
-        $updateProfile->address->update($validated);
-
-
+    
         DB::commit();
 
         $newProfile = $this->profileRepository->get($updateProfile->id)->firstOrFail();
@@ -266,11 +376,10 @@ class UserService implements IUserService
         );
     }
     
-    public function updateUser($request, $id)
+    public function updateUser($request, $user)
     {
         $validated = $request->validated();
 
-        $user = $this->userRepository->get($id)->firstOrFail();
         // $country = $this->countryRepository->get($validated['country_id'])->firstOrFail();
 
         $validated['profile_image'] = $validated['profile_image'] ?? $user->profile_image;
@@ -292,16 +401,7 @@ class UserService implements IUserService
         );
     }
     
-    public function deleteUser(string $id){
-        
-        $user = $this->userRepository->get($id)->firstOrFail();
-
-        if (!$this->userPolicy->delete(Auth::user(), $user)) {
-            return $this->errorResponse(
-                '', 
-                'You are not authorized to delete this user.'
-            );
-        }
+    public function deleteUser($user){
 
         $delete = $this->userRepository->delete($user);
 

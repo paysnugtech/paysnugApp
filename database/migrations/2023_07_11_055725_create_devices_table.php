@@ -14,10 +14,11 @@ return new class extends Migration
     {
         Schema::create('devices', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->string('device_name')->nullable();
+            $table->string('name')->nullable();
             $table->string('device_id')->nullable();
-            $table->string('device_type')->nullable();
+            $table->string('type')->nullable();
             $table->string('platform')->nullable();
+            $table->string('signature');
             $table->string('ip')->nullable();
             $table->integer('status')->default(DeviceStatusEnum::NotVerify->value);
             $table->string('user_id');

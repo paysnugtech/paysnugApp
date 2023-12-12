@@ -13,9 +13,9 @@ class WalletTypeRepository implements IWalletTypeRepository{
 
     public function create($data){
 
-        $walletType = WalletType::create($data);
+        $obj = WalletType::create($data);
 
-        return $walletType;
+        return $obj;
     }
     
     public function get(string $id){
@@ -33,17 +33,25 @@ class WalletTypeRepository implements IWalletTypeRepository{
         // return WalletType::with(['wallets'])->where('name', $name);
         return WalletType::where('name', $name);
     }
-    
-    public function update(WalletType $walletType, $data){
-        
-        $walletType->update($data);
 
-        return $walletType;
+    public function store(WalletType $obj)
+    {
+
+        $save = $obj->save();
+
+        return $save;
     }
     
-    public function delete(WalletType $walletType){
+    public function update(WalletType $obj, $data){
+        
+        $obj->update($data);
 
-        return $walletType->delete();
+        return $obj;
+    }
+    
+    public function delete(WalletType $obj){
+
+        return $obj->delete();
     }
     
 }

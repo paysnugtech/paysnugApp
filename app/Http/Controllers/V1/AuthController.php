@@ -12,7 +12,6 @@ use App\Traits\TokenResponse;
 
 class AuthController extends Controller
 {
-    use ErrorResponse, SuccessResponse, TokenResponse;
 
     protected $authService;
 

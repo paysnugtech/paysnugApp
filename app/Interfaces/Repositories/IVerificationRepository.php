@@ -13,6 +13,7 @@ interface IVerificationRepository{
     public function get(string $id);
     public function getAll();
     public function getByUserId($user_id);
+    public function store(Verification $verification);
     public function update(Verification $verification, $data);
     public function delete(Verification $verification);
 

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreBankRequest extends FormRequest
 {
@@ -11,7 +13,7 @@ class StoreBankRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +24,17 @@ class StoreBankRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'bank_name' => ['required', 'string', 'max:255']
         ];
+    }
+
+
+    public function failedValidation(Validator $validator): array
+    {
+        throw new HttpResponseException(response()->json([
+            'status' => 'failed',
+            'message' => 'Validation error!',
+            'error' => $validator->errors(),
+        ]));
     }
 }

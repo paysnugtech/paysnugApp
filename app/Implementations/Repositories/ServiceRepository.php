@@ -12,35 +12,78 @@ class ServiceRepository implements IServiceRepository{
 
     public function create($data){
         
-        $service = Service::create($data);
-        return $service;
+        $obj = Service::create($data);
+        return $obj;
     }
     
-    public function get(string $id){
+    public function fetch(string $id){
 
-        return Service::with(['address'])->where('id', $id);
+        return Service::with(['user'])->where('id', $id);
     }
     
-    public function getAll(){
+    public function fetchAll(){
 
-        return Service::with(['address'])->get();
+        return Service::with(['user'])->get();
     }
 
-    public function getByUserId($user_id)
+    public function fetchByName($name)
     {
-        return Service::with(['address'])->where('user_id', $user_id);
-    }
-    
-    public function update(Service $service, $data){
-        
-        $service->update($data);
+        $service = Service::where('name', $name);
 
         return $service;
     }
-    
-    public function delete(Service $service){
 
-        return $service->delete();
+
+    public function fetchByUserId($user_id)
+    {
+        return Service::with(['user'])->where('user_id', $user_id);
+    }
+
+
+    public function fetchChargesByName($name)
+    {
+        $service = Service::where('name', $name)->firstOrFail();
+
+        return $service->charges;
+    }
+
+    public function fetchDiscountByName($name)
+    {
+        $service = Service::where('name', $name)->firstOrFail();
+
+        return $service->discount;
+    }
+
+    public function fetchFeeByName($name)
+    {
+        $service = Service::where('name', $name)->firstOrFail();
+
+        return $service->fee;
+    }
+
+
+    public function store(Service $obj)
+    {
+
+        $save = $obj->save();
+
+        return $save;
+    }
+    
+    public function update(Service $obj, $data)
+    {
+        
+        $update = $obj->update($data);
+
+        return $update;
+    }
+    
+    public function delete(Service $service)
+    {
+
+        $delete = $service->delete();
+
+        return $delete;
     }
     
 }

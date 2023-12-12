@@ -11,35 +11,50 @@ class VerificationRepository implements IVerificationRepository{
 
     public function create($data)
     {
-        $user = Verification::create($data);
-        return $user;
+        $obj = Verification::create($data);
+
+        return $obj;
     }
+    
     
     public function get(string $id){
 
-        return Verification::with(['user'])->where('id', $id);
+        return Verification::with(['bill', 'bvn', 'card', 'user'])->where('id', $id);
     }
     
+
     public function getAll(){
 
-        return Verification::with(['user'])->get();
+        return Verification::with(['bill', 'bvn', 'card', 'user'])->get();
     }
+
 
     public function getByUserId($user_id)
     {
-        return Verification::with(['user'])->where('user_id', $user_id);
+        return Verification::with(['bill', 'bvn', 'card', 'user'])->where('user_id', $user_id);
+    }
+
+
+    public function store(Verification $obj)
+    {
+
+        $save = $obj->save();
+
+        return $save;
     }
     
-    public function update(Verification $verification, $data){
+
+    public function update(Verification $obj, $data){
         
-        $verification->update($data);
+        $obj->update($data);
 
-        return $verification;
+        return $obj;
     }
     
-    public function delete(Verification $verification){
 
-        return $verification->delete();
+    public function delete(Verification $obj){
+
+        return $obj->delete();
     }
     
 }

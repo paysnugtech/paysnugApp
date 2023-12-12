@@ -5,35 +5,43 @@ namespace App\Implementations\Services;
 
 use App\Enums\DeviceStatusEnum;
 use App\Enums\LogStatusEnum;
+use App\Http\Resources\LoginsResource;
 use App\Http\Resources\UsersResource;
 use App\Interfaces\Repositories\IDeviceRepository;
 use App\Interfaces\Repositories\IDeviceTokenRepository;
 use App\Interfaces\Repositories\ILogRepository;
-use App\Interfaces\Repositories\IPasswordResetRepository;
 use App\Interfaces\Repositories\IUserRepository;
 use App\Interfaces\Services\IAuthService;
 use App\Models\Device;
 use App\Models\DeviceToken;
 use App\Models\Log;
-use App\Models\PasswordReset;
-use App\Traits\ErrorResponse;
+use App\Traits\EmailTrait;
+use App\Traits\ResponseTrait;
+use App\Traits\StatusTrait;
 use App\Traits\StoreLog;
-use App\Traits\SuccessResponse;
-use App\Traits\TokenResponse;
+use App\Traits\TokenTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 
 class AuthService implements IAuthService
 {
-    use ErrorResponse, StoreLog, SuccessResponse, TokenResponse;
+    use EmailTrait,
+        ResponseTrait,
+        StatusTrait,
+        StoreLog,
+        TokenTrait;
 
+    
+    protected $expire_in;
     protected $deviceRepository;
     protected $deviceTokenRepository;
     protected $logRepository;
     protected $userRepository;
+
+
 
     public function __construct( 
         IDeviceRepository $deviceRepository, 
@@ -42,7 +50,7 @@ class AuthService implements IAuthService
         IUserRepository $userRepository
     )
     {
-
+        $this->expire_in = env("DEVICE_TOKEN_EXPIRE_IN");
         $this->deviceRepository = $deviceRepository;
         $this->deviceTokenRepository = $deviceTokenRepository;
         $this->logRepository = $logRepository;
@@ -90,12 +98,11 @@ class AuthService implements IAuthService
 
 
         // save the token
-        $this->deviceTokenRepository->save($deviceToken);
+        $this->deviceTokenRepository->store($deviceToken);
 
 
         return $this->successResponse(
-            [],
-            'New Device, A token has been sent to your email for device verification'
+            message: 'New Device, A token has been sent to your email for device verification'
         );
 
     }
@@ -106,76 +113,136 @@ class AuthService implements IAuthService
         
         $validated = $request->validated();
 
-
         $credentials = $request->only(['email', 'password']);
 
-        $token = Auth::attempt($credentials);
+        $auth = Auth::attempt($credentials);
         
-        if (!$token) {
+        if (!$auth) {
 
             return $this->errorResponse(
-                [], 
+                401,
                 'Invalid email or password!', 
-                401
-            );
-        }
-
-
-        $deviceToken = $this->deviceTokenRepository->getByEmail($validated['email'])->firstOrFail();
-
-        if($deviceToken->token != $validated['token'])
-        {
-            return $this->errorResponse(
-                [], 
-                'Invalid Token'
-            );
-        }
-
-
-        // Expire in 5 minutes
-        if(now()->subMinutes(5) > $deviceToken->created_at )
-        {
-            return $this->errorResponse(
-                [], 
-                'Token already expired'
             );
         }
 
 
         $user = Auth::user();
 
-
-        DB::beginTransaction();
-
-        // Store device
-        $device = new Device;
-        $device->device_name = $validated['device_name'];
-        $device->device_id = $validated['device_id'];
-        $device->device_type = $validated['device_type'];
-        $device->platform = $validated['platform'];
-        $device->ip = $request->ip();
-        $device->status = DeviceStatusEnum::Verify->value;
-        $device->user_id = $user->id;
-
-        $this->deviceRepository->save($device);
         
+        // generate token
+        $token = "".random_int(101010, 999999);
+        // $token = Str::random(64);
+        $hash_token = Hash::make($token);
 
+        $device = $this->deviceRepository->getByUserId($user->id)->first();
+
+        // print_r($device);
+
+        if(!$device)
+        {
+
+            $old_token = $this->deviceTokenRepository->getByEmail($user->email)->first();
+            
+            if($old_token)
+            {
+
+
+                if(!$this->tokenExpire($old_token))
+                {
+
+                    return $this->errorResponse(
+                        $this->statusCode('token_sent'),
+                        'Token validation error',
+                        [
+                            'token' => 'Token already already sent, wait for '. $old_token->expire_in .' minutes to generate another token',
+                        ], 
+                    );
+                    
+                }
+
+
+                // delete old the token
+                $this->deviceTokenRepository->delete($old_token);
+            }
+
+
+            // create deviceToken object
+            $deviceToken = new DeviceToken();
+            $deviceToken->token = $hash_token;
+            $deviceToken->email = $user->email;
+            $deviceToken->expire_in = $this->expire_in;
+            
+            // Sent the device token notification to email/phone
+            $sendEmail = $this->deviceVerificationTokenEmail($user, $token);
+
+            if(!$sendEmail->success)
+            {
+                return $this->errorResponse(
+                    message: 'Email error!'
+                );
+            }
+
+            // save the token
+            $this->deviceTokenRepository->store($deviceToken);
+
+            return $this->errorResponse(
+                $this->statusCode('new_device'),
+                message: 'This is a new device, an OTP has been sent to you email to verify the device!'
+            );
+        }
+        else if($device->signature !== $validated['signature'])
+        {
+
+            // delete the existing device
+            $this->deviceRepository->delete($device);
+
+
+            // create deviceToken object
+            $deviceToken = new DeviceToken();
+            $deviceToken->token = $hash_token;
+            $deviceToken->email = $user->email;
+            $deviceToken->expire_in = $this->expire_in;
+
+            
+            // Sent the registration successful notification to email/phone
+            $sendEmail = $this->deviceVerificationTokenEmail($user, $token);
+            
+            if(!$sendEmail->success)
+            {
+                return $this->errorResponse(
+                    message: 'Email error!'
+                );
+            }
+            
+            // save the token
+            $this->deviceTokenRepository->store($deviceToken);
+
+            return $this->errorResponse(
+                $this->statusCode('new_device'),
+                message: 'This is a new device, an OTP has been sent to you email to verify the device!'
+                
+            );
+        }
+
+        
+        DB::beginTransaction();
+        
         // Store log
         $this->storeLog($user, $request);
-        
-        
-        // Delete the token
-        $this->deviceTokenRepository->delete($deviceToken);
 
         DB::commit();
 
-        // send notification
+
+        // send login success notification
+        $sendEmail = $this->loginSuccessEmail($user);
+
+        $bearerToken = Auth::refresh();
+
         
         
         return $this->tokenResponse(
-            new UsersResource($user),
-            $token,
-            'Successful'
+            token: $bearerToken,
+            data: new LoginsResource($user),
         );
 
     }
@@ -183,6 +250,22 @@ class AuthService implements IAuthService
     
     public function logoutUser()
     {
+        $user = Auth::user();
+
+        $log = $this->logRepository->getByUserId($user->id)->first();
+
+        if($log)
+        {
+            $timeNow = now();
+            $log->logout_at = $timeNow;
+            $log->deleted_at = $timeNow;
+
+            $this->deviceRepository->delete($log->user->device);
+
+            $this->logRepository->store($log);
+        }
+        
+
         Auth::logout();
 
         return $this->successResponse([], 'Successfully logged out');
@@ -192,12 +275,13 @@ class AuthService implements IAuthService
     {
         
         $user = Auth::user();
+
         $token = Auth::refresh();
 
         return $this->tokenResponse(
-            new UsersResource($user),
-            $token,
-            'Successful'
+            message: 'Successful',
+            data: new UsersResource($user),
+            token: $token,
         );
     }
     

@@ -3,7 +3,8 @@
 namespace App\Exceptions;
 
 
-use App\Traits\ErrorResponse;
+
+use App\Traits\ResponseTrait;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
@@ -17,7 +18,7 @@ use Throwable;
 
 class Handler extends ExceptionHandler
 {
-    use ErrorResponse;
+    use ResponseTrait;
     /**
      * The list of the inputs that are never flashed to the session on validation exceptions.
      *
@@ -42,7 +43,7 @@ class Handler extends ExceptionHandler
             
             $code = $e->getCode() == 0 ? 500 : $e->getCode();
 
-            // print_r($e->getMessage());
+            print_r($e->getMessage());
 
             // print_r($code);
 
@@ -51,32 +52,32 @@ class Handler extends ExceptionHandler
                 if($e instanceOf NotFoundHttpException)
                 {
                     return $this->errorResponse(
+                        $code, 
+                        'Record not found.',
                         [
                             'id' => $e->getMessage()
                         ], 
-                        'Record not found.',
-                        $code
                     );
                 }
                 else if($e instanceOf ModelNotFoundException)
                 {
                     return $this->errorResponse(
+                        $code, 
+                        'Record not found.',
                         [
                             'id' => $e->getMessage()
-                        ], 
-                        'Record not found.',
-                        $code
+                        ],
                     );
                     
                 }
                 else if($e instanceOf MethodNotAllowedHttpException)
                 {
                     return $this->errorResponse(
+                        $code, 
+                        'Token Error',
                         [
                             'token' => "Invalid Token"
-                        ], 
-                        'Token Error',
-                        $code
+                        ]
                     );
                     
                 }
@@ -84,9 +85,9 @@ class Handler extends ExceptionHandler
                 {
 
                     return $this->errorResponse(
-                        [], 
+                        $code,
                         $e->getMessage(),
-                        $code
+                        [], 
                     );
                 }
             }

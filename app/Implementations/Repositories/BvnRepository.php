@@ -11,11 +11,11 @@ class BvnRepository implements IBvnRepository{
 
     public function create($data)
     {
-        $bvn = Bvn::create($data);
-        return $bvn;
+        $obj = Bvn::create($data);
+        return $obj;
     }
     
-    public function get(string $id)
+    public function fetch(string $id)
     {
         return Bvn::with([
             'user', 
@@ -23,7 +23,7 @@ class BvnRepository implements IBvnRepository{
         ])->where('id', $id);
     }
     
-    public function getAll()
+    public function fetchAll()
     {
         return Bvn::with([
             'user', 
@@ -31,24 +31,31 @@ class BvnRepository implements IBvnRepository{
         ])->get();
     }
 
-    public function getByUserId($user_id)
+    public function fetchByUserId($user_id)
     {
         return Bvn::with([
             'user', 
             'verification'
         ])->where('user_id', $user_id);
     }
-    
-    public function update(Bvn $bvn, $data)
-    {
-        $bvn->update($data);
 
-        return $bvn;
+    public function store(Bvn $bvn){
+
+        $obj = $bvn->save();
+
+        return $obj;
     }
     
-    public function delete(Bvn $bvn)
+    public function update(Bvn $obj, $data)
     {
-        return $bvn->delete();
+        $obj->update($data);
+
+        return $obj;
+    }
+    
+    public function delete(Bvn $obj)
+    {
+        return $obj->delete();
     }
     
 }

@@ -23,11 +23,14 @@ class Wallet extends Model
 
     protected $fillable = [
         'id',
-        'user_id',
         'balance',
-        'country_id',
         'is_limited',
         'is_locked',
+        'is_inflow_allow',
+        'is_outflow_allow',
+        'is_interest',
+        'user_id',
+        'country_id',
         'wallet_type_id',
         'matured_at',
         'created_by',
